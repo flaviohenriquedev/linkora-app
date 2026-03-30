@@ -51,11 +51,11 @@ export function FloatingBubbles() {
       {BUBBLES.map((b, i) => (
         <div
           key={i}
-          className={`absolute rounded-full blur-3xl ${b.className}`}
+          className={`absolute will-change-transform rounded-full blur-3xl ${b.className}`}
           style={b.style}
         />
       ))}
-      <div className="absolute left-1/2 top-1/2 h-[min(55vw,380px)] w-[min(55vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/5 to-transparent shadow-[0_0_80px_rgba(201,168,76,0.12)] backdrop-blur-[2px] animate-pulse-soft" />
+      <div className="absolute left-1/2 top-1/2 h-[min(55vw,380px)] w-[min(55vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/5 to-transparent shadow-[0_0_80px_rgba(201,168,76,0.12)] backdrop-blur-[2px] will-change-transform animate-pulse-soft" />
     </div>
   );
 }

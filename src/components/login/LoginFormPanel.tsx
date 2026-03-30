@@ -6,7 +6,7 @@ import { GoogleLoginButton } from "@/components/login/GoogleLoginButton";
 
 export function LoginFormPanel() {
   return (
-    <div className="flex w-full flex-1 flex-col justify-center bg-bg-primary px-4 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-12 md:px-12 lg:max-w-xl lg:bg-bg-secondary/40 lg:px-16">
+    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:max-w-xl lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
       <div className="mx-auto w-full max-w-md animate-fade-in">
         <h2 className="font-serif text-2xl font-medium text-text-primary sm:text-3xl md:text-4xl">
           Bem-vindo de volta

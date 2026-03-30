@@ -4,7 +4,7 @@ import { FloatingBubbles } from "@/components/login/FloatingBubbles";
 
 export function LoginBrandPanel() {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden bg-bg-primary px-4 py-10 text-text-primary sm:min-h-[min(100dvh,720px)] sm:px-8 sm:py-12 md:p-14 lg:min-h-screen lg:min-h-0 lg:rounded-none">
+    <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden bg-bg-primary px-4 py-10 text-text-primary sm:min-h-[min(100dvh,720px)] sm:px-8 sm:py-12 md:p-14 lg:h-full lg:max-h-full lg:min-h-0 lg:rounded-none">
       <FloatingBubbles />
       <div className="relative z-10 flex flex-1 flex-col justify-center">
         <Link

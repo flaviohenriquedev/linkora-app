@@ -40,16 +40,16 @@ const config: Config = {
         },
         float: {
           "0%, 100%": { transform: "translate(0, 0) scale(1)" },
-          "33%": { transform: "translate(8px, -12px) scale(1.02)" },
-          "66%": { transform: "translate(-6px, 6px) scale(0.98)" },
+          "33%": { transform: "translate(20px, -26px) scale(1.06)" },
+          "66%": { transform: "translate(-16px, 18px) scale(0.94)" },
         },
         drift: {
           "0%, 100%": { transform: "translate(0, 0)" },
-          "50%": { transform: "translate(-20px, 14px)" },
+          "50%": { transform: "translate(-42px, 32px)" },
         },
         "pulse-soft": {
-          "0%, 100%": { opacity: "0.85", transform: "scale(1)" },
-          "50%": { opacity: "1", transform: "scale(1.03)" },
+          "0%, 100%": { opacity: "0.72", transform: "scale(1)" },
+          "50%": { opacity: "1", transform: "scale(1.1)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "200% 50%" },
@@ -58,11 +58,11 @@ const config: Config = {
       },
       animation: {
         "fade-in": "fade-in 0.5s ease forwards",
-        float: "float 18s ease-in-out infinite",
-        "float-slow": "float 26s ease-in-out infinite",
-        drift: "drift 22s ease-in-out infinite",
-        "drift-reverse": "drift 28s ease-in-out infinite reverse",
-        "pulse-soft": "pulse-soft 6s ease-in-out infinite",
+        float: "float 11s ease-in-out infinite",
+        "float-slow": "float 15s ease-in-out infinite",
+        drift: "drift 13s ease-in-out infinite",
+        "drift-reverse": "drift 16s ease-in-out infinite reverse",
+        "pulse-soft": "pulse-soft 3.5s ease-in-out infinite",
         shimmer: "shimmer 8s ease infinite",
       },
       backgroundImage: {

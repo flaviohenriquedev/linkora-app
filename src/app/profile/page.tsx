@@ -1,11 +1,41 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { ProfessionalProfile } from "@/components/profile/ProfessionalProfile";
+import { getActiveRoleCookie } from "@/lib/auth/activeRole";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Perfil — LINKORA",
 };
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=/profile");
+  }
+
+  const activeRole = await getActiveRoleCookie();
+  if (activeRole === "owner") {
+    redirect("/owner");
+  }
+  if (activeRole === "provider") {
+    return (
+      <main className="min-h-[calc(100vh-72px)]">
+        <ProfessionalProfile />
+      </main>
+    );
+  }
+
+  const { data: row } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+
+  if (row?.role === "owner") {
+    redirect("/owner");
+  }
+
   return (
     <main className="min-h-[calc(100vh-72px)]">
       <ProfessionalProfile />

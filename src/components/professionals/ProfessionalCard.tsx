@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Professional } from "@/lib/professionals";
+import { professionalPath, type Professional } from "@/lib/professionals";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
@@ -16,9 +16,10 @@ function Stars({ n }: { n: number }) {
 }
 
 export function ProfessionalCard({ professional: p }: Props) {
+  const profilePath = professionalPath(p);
   return (
     <article className="flex min-w-0 cursor-pointer flex-col rounded-2xl border border-border bg-bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gold">
-      <Link href="/profile" className="group mb-4 flex items-center gap-4">
+      <Link href={profilePath} className="group mb-4 flex items-center gap-4">
         <div
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full font-serif text-2xl font-semibold text-white transition-transform group-hover:scale-105"
           style={{ backgroundColor: p.color }}
@@ -38,7 +39,7 @@ export function ProfessionalCard({ professional: p }: Props) {
         <span>({p.reviews})</span>
       </div>
       <div className="mt-auto flex min-w-0 gap-2 sm:gap-3">
-        <Link href="/profile" className="min-w-0 flex-1">
+        <Link href={profilePath} className="min-w-0 flex-1">
           <Button
             variant="outline"
             className="w-full px-3 py-2.5 text-sm sm:px-4 sm:text-[15px]"

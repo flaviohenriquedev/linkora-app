@@ -1,18 +1,76 @@
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
 type Props = {
   className?: string;
+  /** Papel ao criar conta com Google (cadastro). */
+  pendingRole?: "owner" | "provider";
+  /** Página após OAuth (path, ex: /profile). */
+  nextPath: string;
 };
 
-export function GoogleLoginButton({ className = "" }: Props) {
+export function GoogleLoginButton({ className = "", pendingRole, nextPath }: Props) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setError(null);
+    setBusy(true);
+    try {
+      if (pendingRole) {
+        const res = await fetch("/api/auth/pending-role", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: pendingRole }),
+        });
+        if (!res.ok) {
+          const j = (await res.json()) as { error?: string };
+          throw new Error(j.error ?? "Não foi possível salvar o tipo de conta");
+        }
+      }
+
+      const supabase = createClient();
+      const origin = window.location.origin;
+      const safeNext = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
+      const redirectTo = `${origin}/auth/callback`;
+
+      // Guarda o destino para depois do OAuth.
+      // Importante: o Supabase valida "redirectTo" contra a lista autorizada, e querystring costuma exigir match exato.
+      // Então evitamos `?next=` na URL e usamos um cookie simples.
+      document.cookie = `linkora_next=${encodeURIComponent(safeNext)}; path=/; max-age=600; samesite=lax${
+        window.location.protocol === "https:" ? "; secure" : ""
+      }`;
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+
+      if (oauthError) throw oauthError;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao abrir o Google");
+      setBusy(false);
+    }
+  }
+
   return (
-    <button
-      type="button"
-      disabled
-      aria-disabled="true"
-      className={`flex min-h-[48px] w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-border bg-bg-secondary/80 px-4 py-3 text-[15px] font-medium text-text-primary opacity-90 shadow-sm transition hover:border-gold/40 hover:bg-bg-card/90 ${className}`}
-    >
-      <GoogleGlyph className="h-5 w-5 shrink-0" />
-      Continuar com Google
-    </button>
+    <div className="w-full">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void handleClick()}
+        className={`flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-border bg-bg-secondary/80 px-4 py-3 text-[15px] font-medium text-text-primary shadow-sm transition hover:border-gold/40 hover:bg-bg-card/90 disabled:cursor-wait disabled:opacity-70 ${className}`}
+      >
+        <GoogleGlyph className="h-5 w-5 shrink-0" />
+        {busy ? "Abrindo Google…" : "Continuar com Google"}
+      </button>
+      {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
+    </div>
   );
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 const TABS = [
   { id: "subscriptions", label: "Assinaturas" },
@@ -11,7 +12,35 @@ const TABS = [
 ] as const;
 
 export function UserProfileView() {
+  const { profile, refresh } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("subscriptions");
+  const [editing, setEditing] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    setFullName(profile.full_name ?? "");
+  }, [profile]);
+
+  const avatarLetter = useMemo(() => {
+    const n = (fullName || profile?.full_name || "").trim();
+    if (!n) return "U";
+    return n[0]!.toUpperCase();
+  }, [fullName, profile?.full_name]);
+
+  async function saveOwnerProfile() {
+    setSaving(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ full_name: fullName }),
+    });
+    setSaving(false);
+    if (!res.ok) return;
+    setEditing(false);
+    await refresh();
+  }
 
   return (
     <Container className="max-w-[900px] py-10">
@@ -20,18 +49,49 @@ export function UserProfileView() {
         <div className="flex flex-wrap items-end justify-between gap-4 px-8 pb-8">
           <div className="-mt-10 flex items-end gap-6">
             <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-bg-card bg-green-main text-3xl font-bold text-white">
-              U
+              {avatarLetter}
             </div>
             <div className="pb-1">
-              <h1 className="mb-1 text-2xl">Usuário Linkora</h1>
+              {editing ? (
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="mb-1 w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-2xl text-text-primary outline-none focus:border-gold"
+                />
+              ) : (
+                <h1 className="mb-1 text-2xl">{profile?.full_name?.trim() || "Usuário Linkora"}</h1>
+              )}
               <span className="inline-block rounded bg-[rgba(46,125,82,0.2)] px-2 py-0.5 text-xs text-green-light">
                 Empresário
               </span>
             </div>
           </div>
-          <Button variant="outline" className="self-end">
-            Editar Perfil
-          </Button>
+          {editing ? (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="self-end"
+                onClick={() => {
+                  setEditing(false);
+                  setFullName(profile?.full_name ?? "");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="gold"
+                className="self-end"
+                disabled={saving}
+                onClick={() => void saveOwnerProfile()}
+              >
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" className="self-end" onClick={() => setEditing(true)}>
+              Editar Perfil
+            </Button>
+          )}
         </div>
       </div>
 

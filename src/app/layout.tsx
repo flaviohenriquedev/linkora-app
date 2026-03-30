@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -39,8 +40,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${dmSans.variable} ${cormorant.variable}`}>
       <body className="overflow-x-hidden leading-normal">
-        <Header />
-        {children}
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

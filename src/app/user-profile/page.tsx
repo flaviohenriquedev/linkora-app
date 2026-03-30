@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
-import { UserProfileView } from "@/components/user/UserProfileView";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = {
-  title: "Meu Perfil — LINKORA",
-};
+export default async function UserProfilePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function UserProfilePage() {
-  return (
-    <main className="min-h-[calc(100vh-72px)]">
-      <UserProfileView />
-    </main>
-  );
+  if (!user) {
+    redirect("/login?next=/user-profile");
+  }
+
+  redirect("/owner");
 }

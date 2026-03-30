@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogoLinkora } from "@/components/brand/LogoLinkora";
 import { Container } from "@/components/ui/Container";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 const nav = [
   { href: "/", label: "Início" },
@@ -19,15 +20,47 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
+function profileHref(role: string | undefined) {
+  return role === "provider" ? "/profile" : "/owner";
+}
+
+function userInitial(name: string | undefined, email: string | null | undefined) {
+  if (name?.trim()) {
+    const p = name.trim().split(/\s+/);
+    return p[0]!.slice(0, 1).toUpperCase();
+  }
+  if (email) return email.slice(0, 1).toUpperCase();
+  return "U";
+}
+
+function abbreviatedName(name: string | undefined, email: string | null | undefined) {
+  const n = (name ?? "").trim();
+  if (!n) return email ?? "Minha conta";
+  const parts = n.split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) return n;
+  const first = parts[0]!;
+  const last = parts[parts.length - 1]!;
+  const middle = parts.slice(1, -1).map((p) => `${p[0]?.toUpperCase()}.`);
+  return [first, ...middle, last].join(" ");
+}
+
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const { user, profile, email, avatarUrl, isAdmin, loading, signOut } = useAuth();
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   useEffect(() => {
     closeMenu();
   }, [pathname, closeMenu]);
+
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -47,7 +80,29 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen, closeMenu]);
 
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onClick = (ev: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(ev.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const onEsc = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setProfileMenuOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("mousedown", onClick);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [profileMenuOpen]);
+
   if (pathname === "/login" || pathname === "/register") return null;
+
+  const me = profileHref(profile?.role);
+  const initial = userInitial(profile?.full_name, email);
+  const displayName = abbreviatedName(profile?.full_name, email);
 
   return (
     <header className="sticky top-0 z-[100] border-b border-border bg-[rgba(13,31,23,0.92)] pt-[env(safe-area-inset-top)] backdrop-blur-[12px]">
@@ -80,27 +135,97 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex xl:gap-4">
-          <Link
-            href="/login"
-            className="inline-flex min-h-[44px] items-center whitespace-nowrap px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/register"
-            className="inline-flex min-h-[44px] items-center whitespace-nowrap px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
-          >
-            Cadastrar
-          </Link>
-          <Link
-            href="/user-profile"
-            className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap text-[15px] text-gold"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
-              U
+          {!loading && !user ? (
+            <>
+              <Link
+                href="/login"
+                className="inline-flex min-h-[44px] items-center whitespace-nowrap px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
+              >
+                Login
+              </Link>
+            </>
+          ) : null}
+          {!loading && user ? (
+            <>
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen((s) => !s)}
+                  className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap text-[15px] text-gold"
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
+                      <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      initial
+                    )}
+                  </span>
+                  {displayName}
+                </button>
+                {profileMenuOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+0.55rem)] z-[140] w-[min(100vw-2rem,280px)] origin-top-right rounded-xl border border-border bg-bg-card p-2 shadow-2xl"
+                  >
+                    <Link
+                      href={me}
+                      role="menuitem"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-bg-primary"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 20c1.5-3.5 4.5-5.5 8-5.5s6.5 2 8 5.5" />
+                      </svg>
+                      Meu Perfil
+                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        href="/admin"
+                        role="menuitem"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gold hover:bg-bg-primary"
+                      >
+                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                        Administração
+                      </Link>
+                    ) : null}
+                    <div className="my-2 border-t border-border" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        void signOut().then(() => {
+                          router.replace("/");
+                          router.refresh();
+                        });
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary hover:text-gold"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                        <path d="M9 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3" />
+                        <path d="M16 17l5-5-5-5" />
+                        <path d="M21 12H9" />
+                      </svg>
+                      Sair
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+          {loading ? (
+            <span className="text-[15px] text-text-muted" aria-live="polite">
+              …
             </span>
-            Meu Perfil
-          </Link>
+          ) : null}
           <Link href="/professionals">
             <span className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-transparent bg-gold px-6 py-2.5 text-[15px] font-medium text-bg-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-br hover:from-gold-light hover:to-gold">
               Encontrar Profissional →
@@ -109,12 +234,29 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1 lg:hidden">
-          <Link
-            href="/login"
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
-          >
-            Entrar
-          </Link>
+          {!user ? (
+            <Link
+              href="/login"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
+            >
+              Login
+            </Link>
+          ) : (
+            <Link
+              href={me}
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-gold"
+              aria-label="Meu perfil"
+            >
+              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initial
+                )}
+              </span>
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -133,7 +275,6 @@ export function Header() {
       {menuOpen
         ? createPortal(
             <>
-              {/* Portal no body: backdrop-blur no header cria containing block e quebrava fixed nos filhos */}
               <button
                 type="button"
                 className="fixed inset-0 z-[1000] bg-black/55 backdrop-blur-sm lg:hidden"
@@ -176,23 +317,57 @@ export function Header() {
                     </Link>
                   ))}
                   <div className="my-3 border-t border-border" />
-                  <Link
-                    href="/register"
-                    onClick={closeMenu}
-                    className="rounded-xl px-4 py-3.5 text-base text-text-secondary hover:bg-white/5 hover:text-gold"
-                  >
-                    Cadastrar
-                  </Link>
-                  <Link
-                    href="/user-profile"
-                    onClick={closeMenu}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
-                  >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
-                      U
-                    </span>
-                    Meu Perfil
-                  </Link>
+                  {!user ? (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={closeMenu}
+                        className="rounded-xl px-4 py-3.5 text-base text-text-secondary hover:bg-white/5 hover:text-gold"
+                      >
+                        Login
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href={me}
+                        onClick={closeMenu}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
+                          {avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
+                            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            initial
+                          )}
+                        </span>
+                        {displayName}
+                      </Link>
+                      {isAdmin ? (
+                        <Link
+                          href="/admin"
+                          onClick={closeMenu}
+                          className="rounded-xl px-4 py-3.5 text-base font-medium text-gold hover:bg-white/5"
+                        >
+                          Administração
+                        </Link>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          closeMenu();
+                          void signOut().then(() => {
+                            router.replace("/");
+                            router.refresh();
+                          });
+                        }}
+                        className="rounded-xl px-4 py-3.5 text-left text-base text-text-secondary hover:bg-white/5 hover:text-gold"
+                      >
+                        Sair
+                      </button>
+                    </>
+                  )}
                   <Link
                     href="/professionals"
                     onClick={closeMenu}

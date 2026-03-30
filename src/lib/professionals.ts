@@ -10,6 +10,36 @@ export type Professional = {
   color: string;
 };
 
+function slugify(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function professionalSlug(p: Professional): string {
+  return `${slugify(p.name)}-${p.id}`;
+}
+
+export function professionalPath(p: Professional): string {
+  return `/professionals/${professionalSlug(p)}`;
+}
+
+export function professionalFromParam(param: string): Professional | undefined {
+  const m = param.match(/-(\d+)$/);
+  if (m) {
+    const byId = professionals.find((p) => p.id === Number(m[1]));
+    if (byId) return byId;
+  }
+  if (/^\d+$/.test(param)) {
+    return professionals.find((p) => p.id === Number(param));
+  }
+  const normalized = param.toLowerCase().replace(/^-+|-+$/g, "");
+  return professionals.find((p) => slugify(p.name) === normalized);
+}
+
 export const professionals: Professional[] = [
   {
     id: 1,

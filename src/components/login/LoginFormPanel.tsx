@@ -1,13 +1,176 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { GoogleLoginButton } from "@/components/login/GoogleLoginButton";
+import { createClient } from "@/lib/supabase/client";
 
-export function LoginFormPanel() {
+type Props = {
+  nextPath?: string;
+};
+
+type Role = "business" | "provider";
+
+function roleToDb(role: Role): "owner" | "provider" {
+  return role === "business" ? "owner" : "provider";
+}
+
+function homePath(role: Role): string {
+  return role === "provider" ? "/profile" : "/owner";
+}
+
+export function LoginFormPanel({ nextPath = "/" }: Props) {
+  const router = useRouter();
+  const [role, setRole] = useState<Role>("business");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSetupMode, setPasswordSetupMode] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const safeNext = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
+
+  async function activateRoleOrThrow() {
+    const res = await fetch("/api/auth/activate-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: roleToDb(role) }),
+    });
+    const json = (await res.json()) as { error?: string; redirectTo?: string };
+    if (!res.ok) {
+      throw new Error(json.error ?? "Falha ao ativar tipo de conta");
+    }
+    return json.redirectTo ?? homePath(role);
+  }
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    setPasswordSetupMode(false);
+    setOtpSent(false);
+
+    const supabase = createClient();
+    const { error: signError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (!signError) {
+      try {
+        const redirectTo = await activateRoleOrThrow();
+        router.push(safeNext === "/" ? redirectTo : safeNext);
+        router.refresh();
+        setLoading(false);
+        return;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Falha ao ativar tipo de conta");
+        setLoading(false);
+        return;
+      }
+    }
+
+    let status: { exists?: boolean; oauthOnly?: boolean } = {};
+    try {
+      const res = await fetch("/api/auth/account-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.ok) {
+        status = (await res.json()) as typeof status;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    if (status.exists && status.oauthOnly) {
+      setPasswordSetupMode(true);
+      setLoading(false);
+      return;
+    }
+
+    if (signError.message === "Invalid login credentials" && email.trim()) {
+      // Fallback: mesmo sem confirmar via API admin, oferecemos fluxo de definir senha.
+      // Isso cobre contas criadas via Google (sem senha inicial).
+      setPasswordSetupMode(true);
+      setLoading(false);
+      return;
+    }
+
+    setError(signError.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : signError.message);
+    setLoading(false);
+  }
+
+  async function sendOtp() {
+    setError(null);
+    setLoading(true);
+    const supabase = createClient();
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false },
+    });
+    setLoading(false);
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setOtpSent(true);
+  }
+
+  async function completeOtpPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (newPassword.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+    setLoading(true);
+    const supabase = createClient();
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otp.trim(),
+      type: "email",
+    });
+    if (verifyError) {
+      setError(verifyError.message);
+      setLoading(false);
+      return;
+    }
+    const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
+    if (pwError) {
+      setError(pwError.message);
+      setLoading(false);
+      return;
+    }
+    try {
+      const redirectTo = await activateRoleOrThrow();
+      router.push(safeNext === "/" ? redirectTo : safeNext);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao ativar tipo de conta");
+      setLoading(false);
+      return;
+    }
+    router.refresh();
+    setLoading(false);
+  }
+
   return (
-    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:max-w-xl lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
-      <div className="mx-auto w-full max-w-md animate-fade-in">
+    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
+      <div className="mx-auto w-full max-w-xl animate-fade-in">
         <h2 className="font-serif text-[1.65rem] font-medium leading-tight tracking-tight text-text-primary sm:text-3xl sm:leading-snug md:text-4xl">
           Bem-vindo de volta
         </h2>
@@ -15,70 +178,217 @@ export function LoginFormPanel() {
           Entre na sua conta para continuar no Linkora.
         </p>
 
-        <form
-          className="mt-7 flex flex-col gap-4 sm:mt-10 sm:gap-5"
-          noValidate
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium text-text-secondary"
-            >
-              E-mail
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="voce@exemplo.com"
-              className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 text-base text-text-primary outline-none ring-0 transition placeholder:text-text-muted focus:border-gold"
-            />
-          </div>
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-text-secondary"
-              >
-                Senha
-              </label>
-              <span className="text-xs text-text-muted">Em breve</span>
+        {passwordSetupMode ? (
+          <div className="mt-7 space-y-4 sm:mt-10">
+            <div className="rounded-xl border border-gold/40 bg-bg-card/80 p-4 text-sm text-text-secondary">
+              Conta criada com Google? Defina sua senha aqui. Envie um código por e-mail e crie
+              sua senha para entrar com e-mail e senha daqui em diante.
             </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 text-base text-text-primary outline-none transition placeholder:text-text-muted focus:border-gold"
-            />
+            {!otpSent ? (
+              <button
+                type="button"
+                onClick={() => void sendOtp()}
+                disabled={loading}
+                className="w-full rounded-xl border border-border bg-bg-card px-4 py-3 text-[15px] font-medium text-text-primary transition hover:border-gold disabled:opacity-60"
+              >
+                {loading ? "Enviando…" : "Enviar código por e-mail"}
+              </button>
+            ) : null}
+            {otpSent ? (
+              <form className="flex flex-col gap-4" onSubmit={(e) => void completeOtpPassword(e)}>
+                <div>
+                  <label htmlFor="otp" className="mb-2 block text-sm font-medium text-text-secondary">
+                    Código do e-mail
+                  </label>
+                  <input
+                    id="otp"
+                    value={otp}
+                    onChange={(ev) => setOtp(ev.target.value)}
+                    autoComplete="one-time-code"
+                    className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 text-base text-text-primary outline-none transition placeholder:text-text-muted focus:border-gold"
+                    placeholder="000000"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="npw" className="mb-2 block text-sm font-medium text-text-secondary">
+                    Nova senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="npw"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(ev) => setNewPassword(ev.target.value)}
+                      autoComplete="new-password"
+                      className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 pr-12 text-base text-text-primary outline-none transition placeholder:text-text-muted focus:border-gold"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showNewPassword ? "Ocultar senha" : "Mostrar senha"}
+                      className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-muted hover:bg-bg-primary hover:text-gold"
+                      onClick={() => setShowNewPassword((s) => !s)}
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="cpw" className="mb-2 block text-sm font-medium text-text-secondary">
+                    Confirmar senha
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="cpw"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(ev) => setConfirmPassword(ev.target.value)}
+                      autoComplete="new-password"
+                      className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 pr-12 text-base text-text-primary outline-none transition placeholder:text-text-muted focus:border-gold"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                      className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-muted hover:bg-bg-primary hover:text-gold"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" variant="gold" className="min-h-[48px] w-full py-3.5" disabled={loading}>
+                  {loading ? "Salvando…" : "Definir senha e entrar"}
+                </Button>
+              </form>
+            ) : null}
+            <button
+              type="button"
+              className="text-sm text-text-muted underline hover:text-gold"
+              onClick={() => {
+                setPasswordSetupMode(false);
+                setOtpSent(false);
+                setOtp("");
+                setNewPassword("");
+                setConfirmPassword("");
+              }}
+            >
+              Voltar ao login
+            </button>
           </div>
-          <Button type="submit" variant="gold" className="mt-1 min-h-[48px] w-full py-3.5">
-            Entrar
-          </Button>
-        </form>
+        ) : (
+          <form
+            className="mt-7 flex flex-col gap-4 sm:mt-10 sm:gap-5"
+            noValidate
+            onSubmit={(e) => void handleEmailLogin(e)}
+          >
+            <fieldset className="space-y-3">
+              <legend className="mb-1 text-sm font-medium text-text-secondary">
+                Entrar como
+              </legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setRole("business")}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    role === "business"
+                      ? "border-gold bg-[rgba(201,168,76,0.1)]"
+                      : "border-border bg-bg-card hover:border-gold/50"
+                  }`}
+                >
+                  <span className="mb-1 block text-base font-medium text-gold">Empresário</span>
+                  <span className="text-[13px] leading-snug text-text-secondary">
+                    Contratar profissionais e fornecedores.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("provider")}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    role === "provider"
+                      ? "border-green-light bg-[rgba(46,125,82,0.12)]"
+                      : "border-border bg-bg-card hover:border-green-light/50"
+                  }`}
+                >
+                  <span className="mb-1 block text-base font-medium text-green-light">
+                    Prestador
+                  </span>
+                  <span className="text-[13px] leading-snug text-text-secondary">
+                    Oferecer serviços e portfólio.
+                  </span>
+                </button>
+              </div>
+            </fieldset>
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-text-secondary">
+                E-mail
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(ev) => setEmail(ev.target.value)}
+                placeholder="voce@exemplo.com"
+                className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 text-base text-text-primary outline-none ring-0 transition placeholder:text-text-muted focus:border-gold"
+              />
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label htmlFor="password" className="text-sm font-medium text-text-secondary">
+                  Senha
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(ev) => setPassword(ev.target.value)}
+                  placeholder="••••••••"
+                  className="min-h-[48px] w-full rounded-xl border border-border bg-bg-card px-4 py-3 pr-12 text-base text-text-primary outline-none transition placeholder:text-text-muted focus:border-gold"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-muted hover:bg-bg-primary hover:text-gold"
+                  onClick={() => setShowPassword((s) => !s)}
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {error ? <p className="text-sm text-red-400">{error}</p> : null}
+            <Button type="submit" variant="gold" className="mt-1 min-h-[48px] w-full py-3.5" disabled={loading}>
+              {loading ? "Entrando…" : "Entrar"}
+            </Button>
+          </form>
+        )}
 
         <div className="relative my-8 sm:my-10">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase tracking-wider">
-            <span className="bg-bg-primary px-4 text-text-muted lg:bg-bg-secondary/40">
-              ou
-            </span>
+            <span className="bg-bg-primary px-4 text-text-muted lg:bg-bg-secondary/40">ou</span>
           </div>
         </div>
 
-        <GoogleLoginButton />
+        <GoogleLoginButton pendingRole={roleToDb(role)} nextPath={safeNext === "/" ? homePath(role) : safeNext} />
 
         <p className="mt-8 text-center text-sm text-text-muted sm:mt-10">
           Ainda não tem conta?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-gold transition hover:text-gold-light"
-          >
+          <Link href="/register" className="font-medium text-gold transition hover:text-gold-light">
             Criar conta
           </Link>
         </p>

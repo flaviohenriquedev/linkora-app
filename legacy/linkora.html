@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LINKORA - O ecossistema completo para quem confecciona moda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0D1F17;
+      --bg-secondary: #152B1F;
+      --bg-card: #1A3526;
+      --border: #2E5040;
+      --green-main: #2E7D52;
+      --green-light: #4CAF76;
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --text-primary: #F5F2EC;
+      --text-secondary: #8FAF9A;
+      --text-muted: #456055;
+      --white: #FFFFFF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    h1, h2, h3, h4, h5, h6, .font-cormorant {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+    }
+
+    /* Animações CSS Obrigatórias */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    button, input, textarea { font-family: inherit; }
+
+    /* Layout Elements */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+      font-size: 15px;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--bg-primary);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, #E8C96A, #C9A84C);
+      transform: translateY(-2px);
+    }
+
+    .btn-green {
+      background: var(--green-main);
+      color: var(--white);
+    }
+    .btn-green:hover {
+      background: var(--green-light);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-primary);
+    }
+    .btn-outline:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 31, 23, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+
+    .logo-svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+    }
+
+    .nav-links li {
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+      font-size: 15px;
+    }
+    
+    .nav-links li:hover, .nav-links li.active {
+      color: var(--gold);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .login-link {
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+      font-size: 15px;
+    }
+    .login-link:hover { color: var(--gold); }
+
+    /* Sections */
+    section {
+      display: none;
+      animation: fadeIn 0.5s ease forwards;
+      padding: 60px 0;
+      min-height: calc(100vh - 72px);
+    }
+
+    section.active {
+      display: block;
+    }
+
+    /* Page 1: Home */
+    .hero {
+      text-align: center;
+      padding: 80px 0;
+      background: radial-gradient(circle at center, var(--bg-secondary) 0%, transparent 70%);
+    }
+
+    .badge-anim {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green-light);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .hero h1 {
+      font-size: 56px;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero h1 i { color: var(--gold); }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+
+    .search-bar {
+      display: flex;
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      transition: border-color 0.3s ease;
+    }
+    .search-bar:focus-within {
+      border-color: var(--gold);
+    }
+    .search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      padding: 0 16px;
+      outline: none;
+    }
+
+    /* Categories Scroll */
+    .cats {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      margin-bottom: 40px;
+      scrollbar-width: none; /* Firefox */
+    }
+    .cats::-webkit-scrollbar { display: none; } /* Chrome */
+    
+    .cat-pill {
+      white-space: nowrap;
+      padding: 8px 20px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+    .cat-pill:hover, .cat-pill.active {
+      background: rgba(201, 168, 76, 0.1);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Professional Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .pro-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    .pro-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold);
+    }
+
+    .pro-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .pro-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .pro-info h3 {
+      font-size: 18px;
+      margin-bottom: 4px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .pro-badge {
+      display: inline-block;
+      background: rgba(46, 125, 82, 0.2);
+      color: var(--green-light);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .pro-loc {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .pro-rating {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .stars { color: var(--gold); }
+
+    .pro-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: auto;
+    }
+    .pro-actions .btn { flex: 1; padding: 8px 0; font-size: 14px; }
+
+    /* How it works */
+    .section-title {
+      font-size: 36px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 80px;
+    }
+
+    .step-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+    }
+    
+    .step-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 64px;
+      color: var(--gold);
+      opacity: 0.3;
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      line-height: 1;
+    }
+    
+    .step-card h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-card p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* CTA Ka */
+    .cta-ka {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold);
+      border-radius: 24px;
+      padding: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 80px;
+    }
+
+    .cta-ka-content {
+      max-width: 500px;
+    }
+
+    .cta-ka-content h2 {
+      font-size: 32px;
+      margin-bottom: 16px;
+      color: var(--gold-light);
+    }
+    
+    .cta-ka-content p {
+      color: var(--text-secondary);
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    .ka-avatar {
+      width: 160px;
+      height: 160px;
+    }
+
+    /* CSS PLACEHOLDER: ADDITIONAL PAGES */
+    /* ... to be added ... */
+  </style>
+</head>
+<body>
+  
+  <!-- Header -->
+  <header>
+    <div class="container nav-container">
+      <div class="logo-area" onclick="navigate('home')">
+        <svg class="logo-svg" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="17" fill="none" stroke="#C9A84C" stroke-width="2" stroke-dasharray="90 20"/>
+          <line x1="20" y1="4" x2="20" y2="36" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="32" cy="28" r="2.5" fill="#C9A84C"/>
+        </svg>
+        LINKORA
+      </div>
+      <ul class="nav-links">
+        <li class="active" onclick="navigate('home')" id="nav-home">Início</li>
+        <li onclick="navigate('professionals')" id="nav-professionals">Profissionais</li>
+        <li onclick="navigate('blog')" id="nav-courses">Cursos / Blog</li>
+        <li onclick="navigate('ka')" id="nav-ka">IA Ka</li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#" class="login-link" onclick="navigate('register')">Entrar / Cadastrar</a>
+        <a href="#" class="login-link" onclick="navigate('user-profile')" style="color: var(--gold); display: flex; align-items: center; gap: 8px;"><div style="width: 24px; height: 24px; border-radius: 50%; background: var(--green-light); color: var(--bg-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">U</div> Meu Perfil</a>
+        <button class="btn btn-gold" onclick="navigate('professionals')">Encontrar Profissional →</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Home Section -->
+  <section id="home" class="active">
+    <div class="hero container">
+      <div class="badge-anim">
+        <span class="pulse-dot"></span> Ecossistema ativo
+      </div>
+      <h1>O ecossistema completo para quem <i>confecciona moda</i></h1>
+      <p>Encontre estilistas, modelistas, tecidos e muito mais — tudo em um só lugar.</p>
+      <div class="search-bar">
+        <input type="text" placeholder="O que você precisa hoje?" id="home-search">
+        <button class="btn btn-gold" onclick="navigate('professionals')">Buscar</button>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 48px; margin-top: 40px; color: var(--text-secondary);">
+        <div style="text-align: center;">
+          <div style="color: var(--gold); font-size: 32px; font-family: 'Cormorant Garamond', serif; font-weight: 600;">+5000</div>
+          <div style="font-size: 14px; margin-top: 4px;">Profissionais</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="color: var(--gold); font-size: 32px; font-family: 'Cormorant Garamond', serif; font-weight: 600;">+25</div>
+          <div style="font-size: 14px; margin-top: 4px;">Áreas</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="color: var(--gold); font-size: 32px; font-family: 'Cormorant Garamond', serif; font-weight: 600;">+400</div>
+          <div style="font-size: 14px; margin-top: 4px;">Empresas Conectadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h2 class="section-title">Explore por categoria</h2>
+      <div class="cats" id="home-cats">
+        <div class="cat-pill active">Tudo</div>
+        <div class="cat-pill">Estilistas</div>
+        <div class="cat-pill">Modelistas</div>
+        <div class="cat-pill">Cortadores</div>
+        <div class="cat-pill">Tecidos</div>
+        <div class="cat-pill">Aviamentos</div>
+        <div class="cat-pill">Private Label</div>
+        <div class="cat-pill">Acabamento</div>
+        <div class="cat-pill">Marketing</div>
+        <div class="cat-pill">Fotógrafo</div>
+        <div class="cat-pill">Modelos</div>
+        <div class="cat-pill">Cursos</div>
+        <div class="cat-pill">Consultorias</div>
+        <div class="cat-pill">Mentorias</div>
+      </div>
+
+      <div class="cards-grid" id="home-pros">
+        <!-- JS injeta os primeiros 4 profissionais aqui -->
+      </div>
+    </div>
+
+    <div class="container">
+      <h2 class="section-title">Como funciona</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3>Encontre</h3>
+          <p>Busque pelo especialista ou fornecedor ideal para o seu momento de produção.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3>Conecte-se</h3>
+          <p>Envie uma mensagem direta ou agende uma reunião para alinhar os detalhes.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3>Produza</h3>
+          <p>Feche negócio com segurança e inicie ou escale a sua confecção.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="cta-ka">
+        <div class="cta-ka-content">
+          <h2>Fale com a Ka</h2>
+          <p>Ka é sua assistente especialista em confecção de moda. Tire dúvidas técnicas, peça dicas de precificação ou sugestões de tecidos e tendências.</p>
+          <button class="btn btn-green" onclick="navigate('ka')">Conversar com a Ka →</button>
+        </div>
+        <div class="ka-avatar">
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="40" fill="#1A3526"/>
+            <ellipse cx="40" cy="62" rx="18" ry="20" fill="#1B4D35"/>
+            <rect x="36" y="44" width="8" height="10" rx="3" fill="#C8956C"/>
+            <ellipse cx="40" cy="34" rx="12" ry="14" fill="#C8956C"/>
+            <ellipse cx="40" cy="26" rx="13" ry="8" fill="#1A1A1A"/>
+            <rect x="28" y="26" width="5" height="18" rx="2" fill="#1A1A1A"/>
+            <rect x="47" y="26" width="5" height="18" rx="2" fill="#1A1A1A"/>
+            <ellipse cx="35" cy="34" rx="2" ry="2.5" fill="#2A1A0A"/>
+            <ellipse cx="45" cy="34" rx="2" ry="2.5" fill="#2A1A0A"/>
+            <path d="M35 41 Q40 44 45 41" stroke="#8B5E3C" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <circle cx="28" cy="36" r="2" fill="#C9A84C"/>
+            <circle cx="52" cy="36" r="2" fill="#C9A84C"/>
+            <path d="M33 54 Q40 50 47 54" stroke="#2E5040" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h2 class="section-title">Últimas do Blog</h2>
+      <div class="cards-grid blog-home">
+        <!-- Exemplo estático para a Home -->
+        <div class="pro-card">
+          <div style="height: 140px; background: linear-gradient(45deg, var(--bg-secondary), var(--border)); border-radius: 8px; margin-bottom: 16px;"></div>
+          <span class="pro-badge">Tendências</span>
+          <h3 style="margin-bottom: 8px;">Cores Pantone Inverno 2024</h3>
+          <p class="pro-loc" style="margin-bottom: 16px;">Descubra a paleta que vai dominar as vitrines...</p>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline" style="width: 100%" onclick="navigate('blog')">Ler mais →</button>
+        </div>
+        <div class="pro-card">
+          <div style="height: 140px; background: linear-gradient(45deg, var(--border), var(--bg-secondary)); border-radius: 8px; margin-bottom: 16px;"></div>
+          <span class="pro-badge">Negócios</span>
+          <h3 style="margin-bottom: 8px;">Como precificar roupas?</h3>
+          <p class="pro-loc" style="margin-bottom: 16px;">Guia rápido do markup na confecção...</p>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline" style="width: 100%" onclick="navigate('blog')">Ler mais →</button>
+        </div>
+        <div class="pro-card">
+          <div style="height: 140px; background: linear-gradient(45deg, #1A3526, #2E7D52); border-radius: 8px; margin-bottom: 16px;"></div>
+          <span class="pro-badge">Produção</span>
+          <h3 style="margin-bottom: 8px;">Tipos de Modelagem</h3>
+          <p class="pro-loc" style="margin-bottom: 16px;">Plana ou moulage? Qual escolher para a sua marca...</p>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline" style="width: 100%" onclick="navigate('blog')">Ler mais →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Professionals List Section -->
+  <section id="professionals">
+    <div class="container">
+      <h2 class="section-title" style="text-align: left; margin-bottom: 24px;">Encontre os melhores da moda</h2>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div class="search-bar" style="margin: 0; max-width: 400px; width: 100%;">
+          <input type="text" placeholder="Busque por nome, cidade ou especialidade..." id="pro-search" onkeyup="searchProfessionals(this.value)">
+        </div>
+        <div class="cats" style="margin: 0; padding: 0;">
+          <div class="cat-pill active" onclick="filterCategory('Tudo', this)">Tudo</div>
+          <div class="cat-pill" onclick="filterCategory('Estilista', this)">Estilistas</div>
+          <div class="cat-pill" onclick="filterCategory('Modelista', this)">Modelistas</div>
+          <div class="cat-pill" onclick="filterCategory('Cortadora', this)">Cortadores</div>
+          <div class="cat-pill" onclick="filterCategory('Tecidos', this)">Tecidos</div>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="pro-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <!-- JS injeta os profissionais aqui -->
+      </div>
+    </div>
+  </section>
+  <!-- Profile Section -->
+  <section id="profile">
+    <div class="container">
+      <div class="profile-header" style="background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 24px;">
+        <div style="height: 120px; background: linear-gradient(to right, var(--bg-secondary), var(--green-main));"></div>
+        <div style="padding: 0 32px 32px; position: relative; display: flex; align-items: flex-end; gap: 24px;">
+          <div class="pro-avatar" id="profile-avatar" style="width: 100px; height: 100px; font-size: 36px; margin-top: -50px; border: 4px solid var(--bg-card); background: var(--green-main); position: relative;">AB</div>
+          <div style="flex: 1; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h2 id="profile-name" style="font-size: 28px; margin-bottom: 4px;">Ana Beatriz Costa</h2>
+                <span class="pro-badge" id="profile-role">Estilista</span>
+                <p class="pro-loc" id="profile-loc" style="margin-top: 4px;">São Paulo, SP</p>
+                <div class="pro-rating" style="margin-top: 8px;">
+                  <span class="stars">★★★★★</span> <span id="profile-reviews">(47 avaliações)</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-green" onclick="navigate('schedule')">Agendar</button>
+                <button class="btn btn-outline" onclick="navigate('chat')">Chat</button>
+                <button class="btn btn-outline">Portfólio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" style="display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px;">
+        <div class="tab active" onclick="switchTab('about')" style="padding: 12px 0; cursor: pointer; color: var(--gold); border-bottom: 2px solid var(--gold); font-weight: 500;">Sobre</div>
+        <div class="tab" onclick="switchTab('services')" style="padding: 12px 0; cursor: pointer; color: var(--text-secondary);">Serviços</div>
+        <div class="tab" onclick="switchTab('portfolio')" style="padding: 12px 0; cursor: pointer; color: var(--text-secondary);">Portfólio</div>
+        <div class="tab" onclick="switchTab('reviews')" style="padding: 12px 0; cursor: pointer; color: var(--text-secondary);">Avaliações</div>
+      </div>
+
+      <div id="tab-about" class="tab-content">
+        <h3 style="margin-bottom: 16px;">Sobre mim</h3>
+        <p style="color: var(--text-secondary); max-width: 800px;">Especialista em moda feminina com 10 anos de experiência. Foco em sustentabilidade e tecidos naturais. Criação de coleções do zero, pesquisa de tendências e acompanhamento de prova de roupas.</p>
+      </div>
+      
+      <div id="tab-services" class="tab-content" style="display: none;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: var(--bg-card); padding: 24px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="font-size: 18px; margin-bottom: 4px;">Criação de Coleção Completa</h4>
+              <p style="color: var(--text-secondary); font-size: 14px;">Pesquisa, painel semântico, croquis e fichas técnicas.</p>
+            </div>
+            <span style="color: var(--gold); font-weight: 500;">R$ 2.500 a R$ 5.000</span>
+          </div>
+          <div style="background: var(--bg-card); padding: 24px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="font-size: 18px; margin-bottom: 4px;">Ficha Técnica Avulsa</h4>
+              <p style="color: var(--text-secondary); font-size: 14px;">Detalhamento para produção e modelagem.</p>
+            </div>
+            <span style="color: var(--gold); font-weight: 500;">R$ 150 / peça</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-portfolio" class="tab-content" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <div style="height: 200px; background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">Img 1</div>
+          <div style="height: 200px; background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">Img 2</div>
+          <div style="height: 200px; background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">Img 3</div>
+        </div>
+      </div>
+
+      <div id="tab-reviews" class="tab-content" style="display: none;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: var(--bg-card); padding: 24px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--border);"></div>
+              <div>
+                <strong>Mariana Silva</strong>
+                <div class="stars" style="font-size: 12px;">★★★★★</div>
+              </div>
+            </div>
+            <p style="color: var(--text-secondary);">Excelente profissional! As fichas técnicas vieram impecáveis, facilitou muito a vida na facção.</p>
+          </div>
+          <div style="background: var(--bg-card); padding: 24px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--border);"></div>
+              <div>
+                <strong>Boutique X</strong>
+                <div class="stars" style="font-size: 12px;">★★★★★</div>
+              </div>
+            </div>
+            <p style="color: var(--text-secondary);">Entregou a coleção no prazo e com um bom gosto incrível.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Chat Section -->
+  <section id="chat" style="padding: 24px 0;">
+    <div class="container" style="display: flex; gap: 24px; height: calc(100vh - 120px);">
+      <div class="chat-list" style="width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+          <h2 style="font-size: 20px; margin-bottom: 16px;">Mensagens</h2>
+          <div class="search-bar" style="border-radius: 20px;">
+            <input type="text" placeholder="Buscar contato...">
+          </div>
+        </div>
+        <div style="flex: 1; overflow-y: auto;">
+          <div style="padding: 16px 20px; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--border); background: rgba(201,168,76,0.05); border-left: 3px solid var(--gold); cursor: pointer;">
+            <div class="pro-avatar" style="width: 48px; height: 48px; font-size: 18px; background: #2E7D52;">AB</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ana Beatriz Costa</strong>
+                <span style="font-size: 12px; color: var(--text-muted);">10:42</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Podemos fechar nesse valor!</p>
+            </div>
+          </div>
+          <div style="padding: 16px 20px; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;">
+            <div class="pro-avatar" style="width: 48px; height: 48px; font-size: 18px; background: #C9A84C;">FL</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Fernanda Lima</strong>
+                <span style="font-size: 12px; color: var(--text-muted);">Ontem</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Enviei o orçamento pro seu email.</p>
+            </div>
+          </div>
+          <div style="padding: 16px 20px; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;">
+            <div class="pro-avatar" style="width: 48px; height: 48px; font-size: 18px; background: #7B4EA6;">CM</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Carlos Mendes</strong>
+                <span style="font-size: 12px; color: var(--text-muted);">Terça</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Os moldes já estão prontos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-area" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px;">
+          <div class="pro-avatar" style="width: 48px; height: 48px; font-size: 18px; background: #2E7D52;">AB</div>
+          <div>
+            <strong style="font-size: 16px; display: block;">Ana Beatriz Costa</strong>
+            <span style="font-size: 13px; color: var(--green-light);">Online</span>
+          </div>
+        </div>
+        <div id="chat-messages" style="flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+          <div style="align-self: flex-end; background: var(--green-main); padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 70%;">
+            Oi, Ana! Gostei muito do seu portfólio. Você faz desenvolvimento de alfaiataria?
+            <div style="font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; margin-top: 4px;">10:30</div>
+          </div>
+          <div style="align-self: flex-start; background: var(--bg-secondary); padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 70%; border: 1px solid var(--border);">
+            Olá! Faço sim. Inclusive tenho focado bastante nisso ultimamente. Qual seria a complexidade das peças?
+            <div style="font-size: 11px; color: var(--text-muted); text-align: left; margin-top: 4px;">10:35</div>
+          </div>
+          <div style="align-self: flex-end; background: var(--green-main); padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 70%;">
+            Seriam 5 blazers com forro completo e 3 calças de alfaiataria.
+            <div style="font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; margin-top: 4px;">10:38</div>
+          </div>
+          <div style="align-self: flex-start; background: var(--bg-secondary); padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 70%; border: 1px solid var(--border);">
+            Perfeito. Para essa quantia, consigo fechar R$ 4.000 o desenvolvimento.
+            <div style="font-size: 11px; color: var(--text-muted); text-align: left; margin-top: 4px;">10:40</div>
+          </div>
+          <div style="align-self: flex-end; background: var(--green-main); padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 70%;">
+            Podemos fechar nesse valor!
+            <div style="font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; margin-top: 4px;">10:42</div>
+          </div>
+        </div>
+        <div style="padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px;">
+          <input type="text" id="chat-input" placeholder="Digite sua mensagem..." style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 24px; padding: 0 20px; color: var(--text-primary); outline: none;">
+          <button class="btn btn-green" onclick="sendMessage()" style="border-radius: 24px; padding: 0 24px;">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Schedule Section -->
+  <section id="schedule">
+    <div class="container" style="max-width: 800px;">
+      <h2 class="section-title">Agendar com Profissional</h2>
+      
+      <div style="display: flex; justify-content: space-between; margin-bottom: 40px; position: relative;">
+        <div style="position: absolute; top: 15px; left: 0; right: 0; height: 2px; background: var(--border); z-index: 1;"></div>
+        <div style="position: absolute; top: 15px; left: 0; width: 33%; height: 2px; background: var(--gold); z-index: 2; transition: width 0.3s;" id="progress-bar"></div>
+        
+        <div class="step-indicator" id="ind-1" style="position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--gold); color: var(--bg-primary); display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
+          <span style="font-size: 14px; color: var(--gold);">Serviço</span>
+        </div>
+        <div class="step-indicator" id="ind-2" style="position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.3s;">2</div>
+          <span style="font-size: 14px; color: var(--text-muted); transition: color 0.3s;">Data e Hora</span>
+        </div>
+        <div class="step-indicator" id="ind-3" style="position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-card); border: 2px solid var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.3s;">3</div>
+          <span style="font-size: 14px; color: var(--text-muted); transition: color 0.3s;">Confirmação</span>
+        </div>
+      </div>
+
+      <div id="step-1">
+        <h3 style="margin-bottom: 24px;">Escolha o serviço</h3>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.3s;" onclick="this.style.borderColor='var(--gold)'">
+            <input type="radio" name="service" style="accent-color: var(--gold);">
+            <div>
+              <h4 style="font-size: 16px;">Reunião de Alinhamento (Online)</h4>
+              <p style="font-size: 14px; color: var(--text-secondary);">45 min — Gratuito</p>
+            </div>
+          </label>
+          <label style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.3s;" onclick="this.style.borderColor='var(--gold)'">
+            <input type="radio" name="service" style="accent-color: var(--gold);">
+            <div>
+              <h4 style="font-size: 16px;">Consultoria Técnica</h4>
+              <p style="font-size: 14px; color: var(--text-secondary);">2h — R$ 350,00</p>
+            </div>
+          </label>
+        </div>
+        <div style="margin-top: 32px; text-align: right;">
+          <button class="btn btn-gold" onclick="nextStep(2)">Continuar →</button>
+        </div>
+      </div>
+
+      <div id="step-2" style="display: none;">
+        <h3 style="margin-bottom: 24px;">Escolha a data e horário</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+          <div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <button class="btn btn-outline" style="padding: 4px 12px;">&lt;</button>
+                <strong>Dezembro 2024</strong>
+                <button class="btn btn-outline" style="padding: 4px 12px;">&gt;</button>
+              </div>
+              <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 14px;">
+                <div style="color: var(--text-muted); margin-bottom: 8px;">D</div><div style="color: var(--text-muted)">S</div><div style="color: var(--text-muted)">T</div><div style="color: var(--text-muted)">Q</div><div style="color: var(--text-muted)">Q</div><div style="color: var(--text-muted)">S</div><div style="color: var(--text-muted)">S</div>
+                <!-- Dias gerados via JS -->
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin-bottom: 16px; font-size: 16px;">Horários disponíveis</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="time-slots">
+              <button class="btn btn-outline" style="width: 100%; border-color: var(--gold); color: var(--gold);">09:00</button>
+              <button class="btn btn-outline" style="width: 100%;">10:00</button>
+              <button class="btn btn-outline" style="width: 100%;">11:00</button>
+              <button class="btn btn-outline" style="width: 100%;">14:00</button>
+              <button class="btn btn-outline" style="width: 100%;">15:00</button>
+              <button class="btn btn-outline" style="width: 100%;">16:00</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 32px; display: flex; justify-content: space-between;">
+          <button class="btn btn-outline" onclick="nextStep(1)">← Voltar</button>
+          <button class="btn btn-gold" onclick="nextStep(3)">Continuar →</button>
+        </div>
+      </div>
+
+      <div id="step-3" style="display: none;">
+        <h3 style="margin-bottom: 24px;">Confirmar Agendamento</h3>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+          <p style="margin-bottom: 8px;"><strong>Profissional:</strong> Ana Beatriz Costa</p>
+          <p style="margin-bottom: 8px;"><strong>Serviço:</strong> Reunião de Alinhamento (Online)</p>
+          <p style="margin-bottom: 8px;"><strong>Data e Hora:</strong> 15 de Dezembro, 09:00</p>
+        </div>
+        <textarea placeholder="Alguma observação para o profissional? (Opcional)" style="width: 100%; height: 120px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text-primary); resize: vertical; margin-bottom: 24px;"></textarea>
+        <div style="display: flex; justify-content: space-between;">
+          <button class="btn btn-outline" onclick="nextStep(2)">← Voltar</button>
+          <button class="btn btn-green" onclick="confirmSchedule()">Confirmar Agendamento</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- KA Section -->
+  <section id="ka" style="padding: 0;">
+    <div class="container" style="max-width: 800px; height: calc(100vh - 72px); display: flex; flex-direction: column;">
+      <div style="text-align: center; padding: 40px 0 20px;">
+        <div class="ka-avatar" style="width: 100px; height: 100px; margin: 0 auto 16px;">
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="40" fill="#1A3526"/>
+            <ellipse cx="40" cy="62" rx="18" ry="20" fill="#1B4D35"/>
+            <rect x="36" y="44" width="8" height="10" rx="3" fill="#C8956C"/>
+            <ellipse cx="40" cy="34" rx="12" ry="14" fill="#C8956C"/>
+            <ellipse cx="40" cy="26" rx="13" ry="8" fill="#1A1A1A"/>
+            <rect x="28" y="26" width="5" height="18" rx="2" fill="#1A1A1A"/>
+            <rect x="47" y="26" width="5" height="18" rx="2" fill="#1A1A1A"/>
+            <ellipse cx="35" cy="34" rx="2" ry="2.5" fill="#2A1A0A"/>
+            <ellipse cx="45" cy="34" rx="2" ry="2.5" fill="#2A1A0A"/>
+            <path d="M35 41 Q40 44 45 41" stroke="#8B5E3C" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <circle cx="28" cy="36" r="2" fill="#C9A84C"/>
+            <circle cx="52" cy="36" r="2" fill="#C9A84C"/>
+            <path d="M33 54 Q40 50 47 54" stroke="#2E5040" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+        <h2 style="font-size: 28px; margin-bottom: 4px;">Ka</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 12px;">Especialista em Confecção de Moda</p>
+        <div class="badge-anim" style="margin-bottom: 0; background: transparent; border: 1px solid var(--border); border-radius: 12px; padding: 4px 12px; display: inline-flex;">
+          <span class="pulse-dot"></span> Online agora
+        </div>
+      </div>
+
+      <div id="ka-messages" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="align-self: flex-start; background: rgba(46, 125, 82, 0.1); padding: 16px 20px; border-radius: 16px 16px 16px 0; max-width: 80%; border: 1px solid rgba(46, 125, 82, 0.3);">
+          Olá! Sou a Ka, sua assistente virtual focada no universo da moda.
+        </div>
+        <div style="align-self: flex-start; background: rgba(46, 125, 82, 0.1); padding: 16px 20px; border-radius: 16px 16px 16px 0; max-width: 80%; border: 1px solid rgba(46, 125, 82, 0.3);">
+          Estou aqui para tirar dúvidas técnicas, ajudar com fornecedores ou te dar dicas de negócios.
+        </div>
+        <div style="align-self: flex-start; background: rgba(46, 125, 82, 0.1); padding: 16px 20px; border-radius: 16px 16px 16px 0; max-width: 80%; border: 1px solid rgba(46, 125, 82, 0.3);">
+          Como posso ajudar sua confecção hoje?
+        </div>
+      </div>
+
+      <div style="padding: 16px 24px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+          <button class="btn btn-outline" style="border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--gold); border-color: rgba(201,168,76,0.3);" onclick="kaChipClick('Como montar uma grade de tamanhos?')">Como montar uma grade de tamanhos?</button>
+          <button class="btn btn-outline" style="border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--gold); border-color: rgba(201,168,76,0.3);" onclick="kaChipClick('Quais aviamentos usar em jeans?')">Quais aviamentos usar em jeans?</button>
+          <button class="btn btn-outline" style="border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--gold); border-color: rgba(201,168,76,0.3);" onclick="kaChipClick('Como precificar minha coleção?')">Como precificar minha coleção?</button>
+          <button class="btn btn-outline" style="border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--gold); border-color: rgba(201,168,76,0.3);" onclick="kaChipClick('Diferença entre modelagem plana e moulage')">Diferença plana vs moulage</button>
+        </div>
+        <div style="display: flex; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); padding: 8px; border-radius: 32px;">
+          <input type="text" id="ka-input" placeholder="Pergunte à Ka..." style="flex: 1; background: transparent; border: none; padding: 0 20px; color: var(--text-primary); outline: none;">
+          <button class="btn btn-green" onclick="submitKa()" style="border-radius: 24px; padding: 10px 24px;">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Blog Section -->
+  <section id="blog">
+    <div class="container">
+      <h2 class="section-title" style="text-align: left; margin-bottom: 24px;">Blog & Tendências</h2>
+      
+      <div class="cats" style="margin-bottom: 40px;">
+        <div class="cat-pill active">Todos</div>
+        <div class="cat-pill">Tendências</div>
+        <div class="cat-pill">Produção</div>
+        <div class="cat-pill">Negócios</div>
+        <div class="cat-pill">Sustentabilidade</div>
+      </div>
+
+      <div class="cards-grid" style="grid-template-columns: 1fr 1fr; gap: 32px;">
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #1A3526, #2E7D52);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Tendências</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Cores Pantone Inverno 2024</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">12 de Nov, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Descubra a paleta que vai dominar as vitrines na próxima estação e como aplicá-la nas suas peças.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #2E5040, #C9A84C);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Negócios</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Como precificar roupas?</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">05 de Nov, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Guia rápido do markup na confecção. Entenda de uma vez por todas como não perder dinheiro.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #3A1C71, #D76D77, #FFAF7B);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Produção</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Tipos de Modelagem</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">28 de Out, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Plana ou moulage? Qual escolher para a sua marca e o tipo de caimento que você deseja.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #4b6cb7, #182848);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Sustentabilidade</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Tecidos Eco-Friendly</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">15 de Out, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Conheça opções viáveis para tornar sua marca mais sustentável no Brasil.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #1A3526, #C8956C);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Negócios</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Gestão de Facção</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">02 de Out, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Como alinhar prazos e evitar atrasos na entrega das suas coleções.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+        <div class="pro-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: row; align-items: stretch;">
+          <div style="flex: 0 0 40%; background: linear-gradient(135deg, #536976, #292E49);"></div>
+          <div style="padding: 32px; flex: 1; display: flex; flex-direction: column;">
+            <span class="pro-badge" style="align-self: flex-start;">Produção</span>
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Ficha Técnica Perfeita</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 13px;">20 de Set, 2023</p>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">O que não pode faltar na sua ficha técnica para evitar erros de produção em larga escala.</p>
+            <div style="margin-top: auto;">
+              <button class="btn btn-outline" style="width: 100%;">Ler mais →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Register Section -->
+  <section id="register">
+    <div class="container" style="max-width: 600px;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 48px; text-align: center;">
+        <h2 style="font-size: 32px; margin-bottom: 8px;">Bem-vindo à Linkora</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 32px;">Crie sua conta para se conectar com os melhores da moda.</p>
+        
+        <div style="display: flex; gap: 16px; margin-bottom: 32px;">
+          <div style="flex: 1; border: 1px solid var(--gold); border-radius: 8px; padding: 24px; cursor: pointer; transition: all 0.3s; background: rgba(201,168,76,0.1);" onclick="this.style.background='rgba(201,168,76,0.1)'; this.nextElementSibling.style.background='transparent';">
+            <h3 style="font-size: 18px; color: var(--gold); margin-bottom: 8px;">Sou Empresário</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Quero contratar profissionais e fornecedores.</p>
+          </div>
+          <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 24px; cursor: pointer; transition: all 0.3s;" onclick="this.style.background='rgba(46,125,82,0.1)'; this.style.borderColor='var(--green-light)'; this.previousElementSibling.style.background='transparent'; this.previousElementSibling.style.borderColor='var(--border)';">
+            <h3 style="font-size: 18px; color: var(--green-light); margin-bottom: 8px;">Sou Prestador</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Quero oferecer meus serviços e portfólio.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <input type="text" placeholder="Nome Completo" style="width: 100%; border: 1px solid var(--border); background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); outline: none;">
+          <input type="email" placeholder="E-mail" style="width: 100%; border: 1px solid var(--border); background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); outline: none;">
+          <input type="password" placeholder="Senha" style="width: 100%; border: 1px solid var(--border); background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); outline: none;">
+          <button class="btn btn-gold" style="width: 100%; padding: 14px 0; margin-top: 16px;" onclick="navigate('user-profile')">Criar minha conta</button>
+        </div>
+        <p style="color: var(--text-muted); margin-top: 24px; font-size: 14px;">Já tem uma conta? <a href="#" style="color: var(--gold);">Entrar</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- User Profile Section -->
+  <section id="user-profile">
+    <div class="container" style="max-width: 900px;">
+      <div style="background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 24px;">
+        <div style="height: 100px; background: linear-gradient(to right, #1A3526, #C9A84C);"></div>
+        <div style="padding: 0 32px 32px; position: relative;">
+          <div style="display: flex; gap: 24px; align-items: flex-end;">
+            <div style="width: 80px; height: 80px; font-size: 32px; margin-top: -40px; border: 4px solid var(--bg-card); background: var(--green-main); position: relative; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+              U
+            </div>
+            <div style="flex: 1; padding-bottom: 4px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Usuário Linkora</h2>
+              <span class="pro-badge">Empresário</span>
+            </div>
+            <button class="btn btn-outline" style="align-self: flex-end;">Editar Perfil</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" style="display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px;">
+        <div class="tab active" onclick="switchUserProfileTab('subscriptions')" style="padding: 12px 0; cursor: pointer; color: var(--gold); border-bottom: 2px solid var(--gold); font-weight: 500;">Assinaturas</div>
+        <div class="tab" onclick="switchUserProfileTab('history')" style="padding: 12px 0; cursor: pointer; color: var(--text-secondary);">Histórico</div>
+        <div class="tab" onclick="switchUserProfileTab('support')" style="padding: 12px 0; cursor: pointer; color: var(--text-secondary);">Suporte</div>
+      </div>
+
+      <!-- Tab: Assinaturas -->
+      <div id="u-tab-subscriptions" class="u-tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div style="background: linear-gradient(135deg, rgba(201,168,76,0.1), transparent); border: 1px solid var(--gold); border-radius: 12px; padding: 32px;">
+            <span style="display: inline-block; background: var(--gold); color: var(--bg-primary); padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 16px;">PLANO ATIVO</span>
+            <h3 style="font-size: 24px; margin-bottom: 8px; color: var(--gold-light);">Linkora Pro Empresário</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Acesso ilimitado a contatos e suporte prioritário com a IA Ka.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="font-size: 20px;">R$ 49,90 <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">/mês</span></strong>
+              </div>
+              <button class="btn btn-outline" style="border-color: var(--gold); color: var(--gold);">Gerenciar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Histórico -->
+      <div id="u-tab-history" class="u-tab-content" style="display: none;">
+        <h3 style="margin-bottom: 24px; font-size: 20px;">Seus Agendamentos Recentes</h3>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+          <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: #2E7D52; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">AB</div>
+              <div>
+                <strong>Ana Beatriz Costa</strong>
+                <div style="font-size: 13px; color: var(--text-secondary);">Reunião de Alinhamento</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="display: inline-block; background: rgba(46,125,82,0.2); color: var(--green-light); padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-bottom: 4px;">Concluído</span>
+              <div style="font-size: 12px; color: var(--text-muted);">15 Dez 2024</div>
+            </div>
+          </div>
+          <div style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: #C9A84C; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">FL</div>
+              <div>
+                <strong>Fernanda Lima</strong>
+                <div style="font-size: 13px; color: var(--text-secondary);">Corte a Laser - Orçamento</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="display: inline-block; background: rgba(201,168,76,0.2); color: var(--gold); padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-bottom: 4px;">Agendado</span>
+              <div style="font-size: 12px; color: var(--text-muted);">20 Jan 2025</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Suporte -->
+      <div id="u-tab-support" class="u-tab-content" style="display: none;">
+        <h3 style="margin-bottom: 16px; font-size: 20px;">Central de Ajuda e Suporte</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 32px; max-width: 600px;">Problemas com a plataforma, dúvidas sobre assinaturas ou denúncias de profissionais? Nossa equipe está pronta para te atender.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: flex; flex-direction: column; align-items: flex-start;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(46,125,82,0.1); border: 1px solid var(--green-main); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px;">✉️</div>
+            <h4 style="font-size: 18px; margin-bottom: 8px;">Por E-mail</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">Para questões detalhadas, anexos e disputas comerciais.</p>
+            <a href="mailto:hub.linkora@gmail.com" style="color: var(--white); background: var(--bg-secondary); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 500; display: inline-block;">hub.linkora@gmail.com</a>
+          </div>
+          
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: flex; flex-direction: column; align-items: flex-start;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(46,125,82,0.1); border: 1px solid var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px;">💬</div>
+            <h4 style="font-size: 18px; margin-bottom: 8px;">WhatsApp Integrado</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">Atendimento rápido e direto com nossos analistas no Brasil.</p>
+            <a href="https://wa.me/5562993458746" target="_blank" style="color: var(--white); background: #25D366; border: 1px solid #1DA851; padding: 10px 20px; border-radius: 8px; font-weight: 500; display: inline-block; transition: background 0.3s;" onmouseover="this.style.background='#1DA851'" onmouseout="this.style.background='#25D366'">+55 62 99345-8746</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- JavaScript Implementation -->
+  <script>
+    // --- Dados Mockados ---
+    const allProfessionals = [
+      { id:1, name:"Ana Beatriz Costa", role:"Estilista", city:"São Paulo, SP", stars:5, reviews:47, specialty:"Moda Feminina", initials:"AB", color:"#2E7D52" },
+      { id:2, name:"Carlos Mendes", role:"Modelista", city:"Belo Horizonte, MG", stars:4, reviews:31, specialty:"Modelagem Industrial", initials:"CM", color:"#7B4EA6" },
+      { id:3, name:"Fernanda Lima", role:"Cortadora", city:"Fortaleza, CE", stars:5, reviews:58, specialty:"Corte a Laser", initials:"FL", color:"#C9A84C" },
+      { id:4, name:"Rafael Torres", role:"Fotógrafo", city:"Rio de Janeiro, RJ", stars:4, reviews:22, specialty:"Editorial de Moda", initials:"RT", color:"#C04848" },
+      { id:5, name:"Juliana Mendes", role:"Private Label", city:"Curitiba, PR", stars:5, reviews:39, specialty:"Marca Própria", initials:"JM", color:"#2E7D52" },
+      { id:6, name:"Marcos Oliveira", role:"Consultoria", city:"Goiânia, GO", stars:4, reviews:17, specialty:"Gestão de Confecção", initials:"MO", color:"#1E6E8C" },
+      { id:7, name:"Camila Rocha", role:"Estilista", city:"Salvador, BA", stars:5, reviews:63, specialty:"Moda Praia", initials:"CR", color:"#8C5E1E" },
+      { id:8, name:"Thiago Neves", role:"Tecidos", city:"Americana, SP", stars:4, reviews:28, specialty:"Fornecedor Têxtil", initials:"TN", color:"#4E7B2E" }
+    ];
+
+    let currentFilter = 'Tudo';
+    let searchQuery = '';
+
+    // --- Navegação SPA ---
+    function navigate(page) {
+      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+      
+      const target = document.getElementById(page);
+      if(target) target.classList.add('active');
+      
+      const navItem = document.getElementById('nav-' + page);
+      if(navItem) navItem.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- Renderização de Cards ---
+    function renderCards(containerId, count = null) {
+      const container = document.getElementById(containerId);
+      if(!container) return;
+      
+      let filtered = allProfessionals.filter(p => {
+        const matchCat = currentFilter === 'Tudo' || p.role === currentFilter || p.specialty.includes(currentFilter);
+        const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.city.toLowerCase().includes(searchQuery.toLowerCase()) || p.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchCat && matchSearch;
+      });
+
+      if(count) filtered = filtered.slice(0, count);
+
+      container.innerHTML = filtered.map(p => `
+        <div class="pro-card" onclick="openProfile(${p.id})">
+          <div class="pro-header">
+            <div class="pro-avatar" style="background: ${p.color}">${p.initials}</div>
+            <div class="pro-info">
+              <h3>${p.name}</h3>
+              <span class="pro-badge">${p.specialty}</span>
+              <p class="pro-loc">${p.city}</p>
+            </div>
+          </div>
+          <div class="pro-rating">
+            <span class="stars">${'★'.repeat(p.stars)}${'☆'.repeat(5-p.stars)}</span>
+            <span>(${p.reviews})</span>
+          </div>
+          <div class="pro-actions">
+            <button class="btn btn-outline" onclick="event.stopPropagation(); openProfile(${p.id})">Ver Perfil</button>
+            <button class="btn btn-green" onclick="event.stopPropagation(); navigate('chat')">Chat</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- Filtros e Busca ---
+    function filterCategory(cat, element) {
+      if(element) {
+        element.parentElement.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+      }
+      currentFilter = cat;
+      renderCards('pro-grid');
+    }
+
+    function searchProfessionals(query) {
+      searchQuery = query;
+      renderCards('pro-grid');
+    }
+
+    // --- Perfil ---
+    function openProfile(id) {
+      const p = allProfessionals.find(x => x.id === id);
+      if(p) {
+        document.getElementById('profile-name').innerText = p.name;
+        document.getElementById('profile-role').innerText = p.role;
+        document.getElementById('profile-loc').innerText = p.city;
+        document.getElementById('profile-reviews').innerText = `(${p.reviews} avaliações)`;
+        const avatar = document.getElementById('profile-avatar');
+        avatar.innerText = p.initials;
+        avatar.style.background = p.color;
+        navigate('profile');
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('#profile .tabs .tab').forEach(t => {
+        t.style.color = 'var(--text-secondary)';
+        t.style.borderBottom = 'none';
+        t.style.fontWeight = 'normal';
+      });
+      event.target.style.color = 'var(--gold)';
+      event.target.style.borderBottom = '2px solid var(--gold)';
+      event.target.style.fontWeight = '500';
+
+      document.querySelectorAll('#profile .tab-content').forEach(tc => tc.style.display = 'none');
+      document.getElementById('tab-' + tabId).style.display = 'block';
+    }
+
+    // --- Chat B2B ---
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if(!text) return;
+      
+      const msgs = document.getElementById('chat-messages');
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      
+      msgs.innerHTML += `
+        <div style="align-self: flex-end; background: var(--green-main); padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 70%; animation: fadeIn 0.3s;">
+          ${text}
+          <div style="font-size: 11px; color: rgba(255,255,255,0.7); text-align: right; margin-top: 4px;">${time}</div>
+        </div>
+      `;
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Resposta simulada
+      setTimeout(() => {
+        msgs.innerHTML += `
+          <div style="align-self: flex-start; background: var(--bg-secondary); padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 70%; border: 1px solid var(--border); animation: fadeIn 0.3s;">
+            Certo, vou verificar e te retorno.
+            <div style="font-size: 11px; color: var(--text-muted); text-align: left; margin-top: 4px;">${time}</div>
+          </div>
+        `;
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 1500);
+    }
+
+    // --- Agendamento ---
+    function nextStep(step) {
+      document.getElementById('step-1').style.display = 'none';
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('step-3').style.display = 'none';
+      document.getElementById('step-' + step).style.display = 'block';
+      
+      const bar = document.getElementById('progress-bar');
+      bar.style.width = step === 1 ? '33%' : step === 2 ? '66%' : '100%';
+      
+      for(let i=1; i<=3; i++) {
+        const ind = document.getElementById('ind-'+i).children[0];
+        const span = document.getElementById('ind-'+i).children[1];
+        if(i <= step) {
+          ind.style.background = 'var(--gold)';
+          ind.style.borderColor = 'var(--gold)';
+          ind.style.color = 'var(--bg-primary)';
+          span.style.color = 'var(--gold)';
+        } else {
+          ind.style.background = 'var(--bg-card)';
+          ind.style.borderColor = 'var(--border)';
+          ind.style.color = 'var(--text-muted)';
+          span.style.color = 'var(--text-muted)';
+        }
+      }
+    }
+
+    function confirmSchedule() {
+      alert("Agendamento confirmado com sucesso! Verifique seu e-mail.");
+      navigate('home');
+      nextStep(1); // reset
+    }
+
+    function initCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      let html = grid.innerHTML; // keep days header
+      let activeDay = 15;
+      for(let i=1; i<=31; i++) {
+        const isSelected = i === activeDay;
+        const color = isSelected ? 'var(--bg-primary)' : 'var(--text-primary)';
+        const bg = isSelected ? 'var(--gold)' : 'transparent';
+        const weight = isSelected ? 'bold' : 'normal';
+        html += `<div style="padding: 6px; cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto; background: ${bg}; color: ${color}; font-weight: ${weight}; transition: all 0.2s;" onclick="selectDay(this)">${i}</div>`;
+      }
+      grid.innerHTML = html;
+    }
+
+    function selectDay(el) {
+      document.querySelectorAll('#calendar-grid div').forEach(d => {
+        if(d.innerText && d.innerText.length <= 2) {
+          d.style.background = 'transparent';
+          d.style.color = 'var(--text-primary)';
+          d.style.fontWeight = 'normal';
+        }
+      });
+      el.style.background = 'var(--gold)';
+      el.style.color = 'var(--bg-primary)';
+      el.style.fontWeight = 'bold';
+    }
+
+    // --- IA Ka ---
+    const kaResponses = [
+      "Uma boa grade começa analisando o público-alvo. Para o Brasil, o padrão ABNT é um ótimo ponto de partida. Recomendo sempre testar os pilotos em manequins e pessoas reais do seu biotipo alvo.",
+      "Para jeans, a escolha dos botões e rebites é vital. Recomendo ligas de latão ou zamac que não enferrujam na lavanderia. O zíper precisa ser YKK ou de latão resistente.",
+      "A precificação ideal na moda envolve Custos Variáveis + Custos Fixos proporcionais + Margem de Lucro (Markup). Geralmente, o markup de atacado gira em torno de 2.0 a 2.5, e o de varejo entre 3.0 e 4.0 acima do custo do produto.",
+      "A modelagem plana é feita no papel com base em medidas e cálculos matemáticos, ideal para produção em escala. Já o moulage é a modelagem tridimensional feita diretamente no manequim, excelente para drapês e peças exclusivas sob medida."
+    ];
+
+    function kaChipClick(text) {
+      const input = document.getElementById('ka-input');
+      input.value = text;
+      submitKa();
+    }
+
+    function submitKa() {
+      const input = document.getElementById('ka-input');
+      const text = input.value.trim();
+      if(!text) return;
+
+      const msgs = document.getElementById('ka-messages');
+      
+      // User msg
+      msgs.innerHTML += `
+        <div style="align-self: flex-end; background: rgba(201, 168, 76, 0.1); padding: 16px 20px; border-radius: 16px 16px 0 16px; max-width: 80%; border: 1px solid rgba(201, 168, 76, 0.3); color: var(--gold); animation: fadeIn 0.3s;">
+          ${text}
+        </div>
+      `;
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Typing indicator
+      const typingId = 'typing-' + Date.now();
+      msgs.innerHTML += `
+        <div id="${typingId}" style="align-self: flex-start; background: rgba(46, 125, 82, 0.1); padding: 16px 20px; border-radius: 16px 16px 16px 0; max-width: 80%; border: 1px solid rgba(46, 125, 82, 0.3); color: var(--text-secondary); animation: pulse 1s infinite;">
+          Ka está digitando...
+        </div>
+      `;
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Bot response
+      setTimeout(() => {
+        document.getElementById(typingId).remove();
+        const randRes = kaResponses[Math.floor(Math.random() * kaResponses.length)];
+        msgs.innerHTML += `
+          <div style="align-self: flex-start; background: rgba(46, 125, 82, 0.1); padding: 16px 20px; border-radius: 16px 16px 16px 0; max-width: 80%; border: 1px solid rgba(46, 125, 82, 0.3); animation: fadeIn 0.3s;">
+            ${randRes}
+          </div>
+        `;
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 1500 + Math.random() * 1000);
+    }
+
+    // --- User Profile Tabs ---
+    function switchUserProfileTab(tabId) {
+      document.querySelectorAll('#user-profile .tabs .tab').forEach(t => {
+        t.style.color = 'var(--text-secondary)';
+        t.style.borderBottom = 'none';
+        t.style.fontWeight = 'normal';
+      });
+      event.target.style.color = 'var(--gold)';
+      event.target.style.borderBottom = '2px solid var(--gold)';
+      event.target.style.fontWeight = '500';
+
+      document.querySelectorAll('#user-profile .u-tab-content').forEach(tc => tc.style.display = 'none');
+      document.getElementById('u-tab-' + tabId).style.display = 'block';
+    }
+
+    // --- Init ---
+    window.onload = () => {
+      renderCards('home-pros', 4);
+      renderCards('pro-grid');
+      initCalendar();
+      
+      // Interpolação de inputs estilo enter
+      document.getElementById('ka-input').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') submitKa();
+      });
+      document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') sendMessage();
+      });
+    };
+  </script>
+</body>
+</html>

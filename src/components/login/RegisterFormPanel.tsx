@@ -16,17 +16,17 @@ export function RegisterFormPanel() {
   const [role, setRole] = useState<Role>("business");
 
   return (
-    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:max-w-xl lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
+    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:max-w-xl lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
       <div className="mx-auto w-full max-w-md animate-fade-in">
-        <h2 className="font-serif text-2xl font-medium text-text-primary sm:text-3xl md:text-4xl">
+        <h2 className="font-serif text-[1.65rem] font-medium leading-tight tracking-tight text-text-primary sm:text-3xl sm:leading-snug md:text-4xl">
           Criar conta
         </h2>
-        <p className="mt-2 text-sm text-text-secondary sm:text-base">
+        <p className="mt-2.5 max-w-[32ch] text-[15px] leading-relaxed text-text-secondary sm:mt-3 sm:max-w-none sm:text-base">
           Conecte-se aos melhores da moda com a mesma experiência em todos os dispositivos.
         </p>
 
         <form
-          className="mt-8 flex flex-col gap-4 sm:mt-10 sm:gap-5"
+          className="mt-7 flex flex-col gap-4 sm:mt-10 sm:gap-5"
           noValidate
           onSubmit={(e) => {
             e.preventDefault();

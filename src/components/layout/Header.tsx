@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Logo } from "@/components/brand/Logo";
 import { Container } from "@/components/ui/Container";
 
@@ -129,78 +130,82 @@ export function Header() {
         </div>
       </Container>
 
-      {menuOpen ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[200] bg-black/55 backdrop-blur-sm lg:hidden"
-            aria-label="Fechar menu"
-            onClick={closeMenu}
-          />
-          <div
-            id="mobile-menu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu de navegação"
-            className="fixed inset-y-0 right-0 z-[201] flex w-[min(100%,20rem)] flex-col border-l border-border bg-bg-primary pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] shadow-2xl lg:hidden"
-          >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="font-serif text-lg text-text-primary">Menu</span>
+      {menuOpen
+        ? createPortal(
+            <>
+              {/* Portal no body: backdrop-blur no header cria containing block e quebrava fixed nos filhos */}
               <button
                 type="button"
-                onClick={closeMenu}
-                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-secondary hover:bg-white/5 hover:text-gold"
+                className="fixed inset-0 z-[1000] bg-black/55 backdrop-blur-sm lg:hidden"
                 aria-label="Fechar menu"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Principal">
-              {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMenu}
-                  className={`rounded-xl px-4 py-3.5 text-base transition-colors ${
-                    isActive(pathname, item.href)
-                      ? "bg-gold/10 font-medium text-gold"
-                      : "text-text-secondary hover:bg-white/5 hover:text-gold"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="my-3 border-t border-border" />
-              <Link
-                href="/register"
                 onClick={closeMenu}
-                className="rounded-xl px-4 py-3.5 text-base text-text-secondary hover:bg-white/5 hover:text-gold"
+              />
+              <div
+                id="mobile-menu"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menu de navegação"
+                className="fixed inset-y-0 right-0 z-[1001] flex w-[min(100%,20rem)] flex-col border-l border-border bg-bg-primary pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] shadow-2xl lg:hidden"
               >
-                Cadastrar
-              </Link>
-              <Link
-                href="/user-profile"
-                onClick={closeMenu}
-                className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
-                  U
-                </span>
-                Meu Perfil
-              </Link>
-              <Link
-                href="/professionals"
-                onClick={closeMenu}
-                className="mt-2 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-gold px-4 py-3 text-center font-medium text-bg-primary"
-              >
-                Encontrar Profissional →
-              </Link>
-            </nav>
-          </div>
-        </>
-      ) : null}
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <span className="font-serif text-lg text-text-primary">Menu</span>
+                  <button
+                    type="button"
+                    onClick={closeMenu}
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-secondary hover:bg-white/5 hover:text-gold"
+                    aria-label="Fechar menu"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Principal">
+                  {nav.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMenu}
+                      className={`rounded-xl px-4 py-3.5 text-base transition-colors ${
+                        isActive(pathname, item.href)
+                          ? "bg-gold/10 font-medium text-gold"
+                          : "text-text-secondary hover:bg-white/5 hover:text-gold"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <div className="my-3 border-t border-border" />
+                  <Link
+                    href="/register"
+                    onClick={closeMenu}
+                    className="rounded-xl px-4 py-3.5 text-base text-text-secondary hover:bg-white/5 hover:text-gold"
+                  >
+                    Cadastrar
+                  </Link>
+                  <Link
+                    href="/user-profile"
+                    onClick={closeMenu}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
+                      U
+                    </span>
+                    Meu Perfil
+                  </Link>
+                  <Link
+                    href="/professionals"
+                    onClick={closeMenu}
+                    className="mt-2 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-gold px-4 py-3 text-center font-medium text-bg-primary"
+                  >
+                    Encontrar Profissional →
+                  </Link>
+                </nav>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </header>
   );
 }

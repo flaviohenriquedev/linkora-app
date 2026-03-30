@@ -53,8 +53,8 @@ export function KaChat() {
   return (
     <div className="mx-auto flex max-w-[800px] min-h-[calc(100vh-72px)] flex-col px-4 pb-6">
       <div className="shrink-0 py-8 text-center">
-        <div className="mx-auto mb-4 h-[100px] w-[100px]">
-          <KaAvatar />
+        <div className="mx-auto mb-5 h-[112px] w-[112px] sm:h-[120px] sm:w-[120px]">
+          <KaAvatar priority />
         </div>
         <h1 className="mb-1 font-serif text-3xl">Ka</h1>
         <p className="mb-3 text-text-secondary">Especialista em Confecção de Moda</p>

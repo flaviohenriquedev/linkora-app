@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/brand/Logo";
+import { LogoLinkora } from "@/components/brand/LogoLinkora";
 
 /** Faixa fina só abaixo do breakpoint lg: logo + atalho para o início (safe-area no topo). */
 export function AuthMobileTopBar() {
@@ -9,7 +9,7 @@ export function AuthMobileTopBar() {
         href="/"
         className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2.5 font-serif text-[0.95rem] font-semibold tracking-[0.14em] text-text-primary transition-opacity hover:opacity-90"
       >
-        <Logo className="h-8 w-8 shrink-0" />
+        <LogoLinkora className="h-8 w-8 shrink-0 text-gold" />
         <span className="truncate">LINKORA</span>
       </Link>
       <Link

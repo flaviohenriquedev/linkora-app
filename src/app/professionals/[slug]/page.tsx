@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicProfessionalProfile } from "@/components/profile/PublicProfessionalProfile";
-import { professionalFromParam } from "@/lib/professionals";
+import {
+  getPublicProfessionalBySlug,
+} from "@/lib/public-professionals";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -9,7 +11,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const professional = professionalFromParam(slug);
+  const professional = await getPublicProfessionalBySlug(slug);
   if (!professional) return { title: "Profissional — LINKORA" };
   return {
     title: `${professional.name} — LINKORA`,
@@ -19,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProfessionalPublicPage({ params }: Props) {
   const { slug } = await params;
-  const professional = professionalFromParam(slug);
+  const professional = await getPublicProfessionalBySlug(slug);
   if (!professional) notFound();
 
   return (

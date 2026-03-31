@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { professionalPath, type Professional } from "@/lib/professionals";
 import { Button } from "@/components/ui/Button";
+import { professionalPath, type PublicProfessional } from "@/lib/public-professionals";
 
 type Props = {
-  professional: Professional;
+  professional: PublicProfessional;
 };
 
 function Stars({ n }: { n: number }) {

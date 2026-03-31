@@ -3,7 +3,6 @@ import { BlogPreview } from "@/components/home/BlogPreview";
 import { CtaKa } from "@/components/home/CtaKa";
 import { ExploreCategories } from "@/components/home/ExploreCategories";
 import { HeroSection } from "@/components/home/HeroSection";
-import { HomeProfessionalsGrid } from "@/components/home/HomeProfessionalsGrid";
 import { HowItWorks } from "@/components/home/HowItWorks";
 
 /** Home lê categorias do banco; sem isso o build pode cachear HTML sem categorias novas. */
@@ -32,7 +31,6 @@ export default function HomePage() {
       <Suspense fallback={<ExploreCategoriesFallback />}>
         <ExploreCategories />
       </Suspense>
-      <HomeProfessionalsGrid />
       <HowItWorks />
       <CtaKa />
       <BlogPreview />

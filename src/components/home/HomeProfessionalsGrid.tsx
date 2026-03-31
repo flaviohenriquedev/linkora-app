@@ -1,8 +1,9 @@
 import { Container } from "@/components/ui/Container";
 import { ProfessionalCard } from "@/components/professionals/ProfessionalCard";
-import { professionals } from "@/lib/professionals";
+import { getPublicProfessionalsAndCategories } from "@/lib/public-professionals";
 
-export function HomeProfessionalsGrid() {
+export async function HomeProfessionalsGrid() {
+  const { professionals } = await getPublicProfessionalsAndCategories();
   const slice = professionals.slice(0, 4);
   return (
     <Container className="pb-12 sm:pb-16">

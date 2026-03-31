@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Container } from "@/components/ui/Container";
-
-export type ExploreCategoryItem = { id: string; name: string; slug: string };
+import { ProfessionalCard } from "@/components/professionals/ProfessionalCard";
+import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals";
 
 type Props = {
-  categories: ExploreCategoryItem[];
+  categories: PublicCategory[];
+  professionals: PublicProfessional[];
 };
 
-export function ExploreCategoriesClient({ categories }: Props) {
+export function ExploreCategoriesClient({ categories, professionals }: Props) {
   const [active, setActive] = useState<"all" | string>("all");
+  const filtered = useMemo(
+    () => professionals.filter((p) => active === "all" || p.categorySlugs.includes(active)),
+    [active, professionals],
+  );
 
   const pill =
     "shrink-0 flex-none min-h-[44px] whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition-all duration-300 sm:px-5";
@@ -54,6 +60,24 @@ export function ExploreCategoriesClient({ categories }: Props) {
             </button>
           ))}
         </div>
+      </div>
+      <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
+        {filtered.map((p) => (
+          <ProfessionalCard key={p.id} professional={p} />
+        ))}
+      </div>
+      {!filtered.length ? (
+        <p className="mt-7 text-center text-sm text-text-muted">
+          Nenhum prestador encontrado nessa categoria no momento.
+        </p>
+      ) : null}
+      <div className="mt-7 text-center sm:mt-8">
+        <Link
+          href="/professionals"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm text-text-secondary transition hover:border-gold hover:text-gold"
+        >
+          Ver todos os profissionais
+        </Link>
       </div>
     </Container>
   );

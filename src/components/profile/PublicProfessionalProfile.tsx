@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import type { Professional } from "@/lib/professionals";
 
 const TABS = [
   { id: "about", label: "Sobre" },
@@ -13,8 +12,18 @@ const TABS = [
   { id: "reviews", label: "Avaliações" },
 ] as const;
 
+type ProfileProfessional = {
+  name: string;
+  specialty: string;
+  city: string;
+  color: string;
+  initials: string;
+  stars: number;
+  reviews: number;
+};
+
 type Props = {
-  professional: Professional;
+  professional: ProfileProfessional;
 };
 
 function stars(n: number) {

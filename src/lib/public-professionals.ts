@@ -1,23 +1,5 @@
 import { tryCreateClient } from "@/lib/supabase/server";
-
-export type PublicCategory = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
-export type PublicProfessional = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string;
-  specialty: string;
-  categorySlugs: string[];
-  initials: string;
-  color: string;
-  stars: number;
-  reviews: number;
-};
+import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals-shared";
 
 type ServiceCategory = { name?: string | null; slug?: string | null } | null;
 type ServiceRow = {
@@ -73,10 +55,6 @@ function colorFromSeed(seed: string) {
 
 export function professionalSlug(name: string, id: string) {
   return `${slugify(name || "prestador")}-${id}`;
-}
-
-export function professionalPath(p: Pick<PublicProfessional, "slug">) {
-  return `/professionals/${p.slug}`;
 }
 
 export function professionalIdFromSlug(slug: string): string | null {

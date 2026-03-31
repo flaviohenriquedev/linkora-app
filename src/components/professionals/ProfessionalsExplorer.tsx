@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { ProfessionalCard } from "@/components/professionals/ProfessionalCard";
-import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals";
+import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals-shared";
 
 type Props = {
   categories: PublicCategory[];

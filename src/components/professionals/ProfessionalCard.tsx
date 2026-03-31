@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { professionalPath, type PublicProfessional } from "@/lib/public-professionals";
+import { professionalPath, type PublicProfessional } from "@/lib/public-professionals-shared";
 
 type Props = {
   professional: PublicProfessional;

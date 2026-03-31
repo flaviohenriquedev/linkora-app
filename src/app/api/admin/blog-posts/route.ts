@@ -16,7 +16,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("blog_posts")
     .select(
-      "id, title, slug, excerpt, body, is_published, published_at, created_at, updated_at",
+      "id, title, slug, excerpt, body, image_file_id, attachment_file_id, is_published, published_at, created_at, updated_at",
     )
     .order("created_at", { ascending: false });
 
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
     excerpt?: string;
     body?: string;
     is_published?: boolean;
+    image_file_id?: string | null;
+    attachment_file_id?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -59,9 +61,21 @@ export async function POST(request: Request) {
       body: body.body?.trim() || null,
       is_published: isPublished,
       published_at: publishedAt,
+      image_file_id:
+        body.image_file_id === null
+          ? null
+          : typeof body.image_file_id === "string" && body.image_file_id.trim()
+            ? body.image_file_id.trim()
+            : null,
+      attachment_file_id:
+        body.attachment_file_id === null
+          ? null
+          : typeof body.attachment_file_id === "string" && body.attachment_file_id.trim()
+            ? body.attachment_file_id.trim()
+            : null,
     })
     .select(
-      "id, title, slug, excerpt, body, is_published, published_at, created_at, updated_at",
+      "id, title, slug, excerpt, body, image_file_id, attachment_file_id, is_published, published_at, created_at, updated_at",
     )
     .single();
 

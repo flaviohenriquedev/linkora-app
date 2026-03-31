@@ -23,6 +23,8 @@ export async function PATCH(request: Request, { params }: Params) {
     excerpt?: string;
     body?: string;
     is_published?: boolean;
+    image_file_id?: string | null;
+    attachment_file_id?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -48,6 +50,16 @@ export async function PATCH(request: Request, { params }: Params) {
   }
   if (typeof body.excerpt === "string") patch.excerpt = body.excerpt || null;
   if (typeof body.body === "string") patch.body = body.body || null;
+  if (body.image_file_id === null) {
+    patch.image_file_id = null;
+  } else if (typeof body.image_file_id === "string" && body.image_file_id.trim()) {
+    patch.image_file_id = body.image_file_id.trim();
+  }
+  if (body.attachment_file_id === null) {
+    patch.attachment_file_id = null;
+  } else if (typeof body.attachment_file_id === "string" && body.attachment_file_id.trim()) {
+    patch.attachment_file_id = body.attachment_file_id.trim();
+  }
   if (typeof body.is_published === "boolean") {
     patch.is_published = body.is_published;
     if (body.is_published && !existing.published_at) {
@@ -67,7 +79,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .update(patch)
     .eq("id", id)
     .select(
-      "id, title, slug, excerpt, body, is_published, published_at, created_at, updated_at",
+      "id, title, slug, excerpt, body, image_file_id, attachment_file_id, is_published, published_at, created_at, updated_at",
     )
     .single();
 

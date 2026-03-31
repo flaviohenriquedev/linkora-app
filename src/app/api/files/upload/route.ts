@@ -1,10 +1,40 @@
 import { NextResponse } from "next/server";
+import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+const ALLOWED_DOCS = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/zip",
+  "application/x-zip-compressed",
+  "text/plain",
+]);
+const MAX_DOC_BYTES = 25 * 1024 * 1024;
 
 const purposes = new Set(["profile_avatar", "product_image", "document", "other"]);
+
+function extForMime(mime: string): string {
+  const m: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/zip": "zip",
+    "application/x-zip-compressed": "zip",
+    "text/plain": "txt",
+  };
+  return m[mime] ?? "bin";
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -34,19 +64,36 @@ export async function POST(request: Request) {
     typeof purposeRaw === "string" && purposes.has(purposeRaw) ? purposeRaw : "other";
 
   const mime = file.type || "application/octet-stream";
-  if (!ALLOWED.has(mime)) {
+  const isImage = ALLOWED_IMAGES.has(mime);
+  let maxBytes = MAX_IMAGE_BYTES;
+  let purposeResolved = purpose as "profile_avatar" | "product_image" | "document" | "other";
+
+  if (!isImage) {
+    const { isAdmin } = await isCurrentUserAdmin();
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Apenas administradores podem enviar documentos (PDF, Office, etc.)" },
+        { status: 403 },
+      );
+    }
+    if (!ALLOWED_DOCS.has(mime)) {
+      return NextResponse.json(
+        { error: "Tipo de documento não permitido (PDF, Office, ZIP ou TXT)" },
+        { status: 400 },
+      );
+    }
+    maxBytes = MAX_DOC_BYTES;
+    purposeResolved = "document";
+  }
+
+  if (file.size > maxBytes) {
     return NextResponse.json(
-      { error: "Tipo não permitido (use JPEG, PNG ou WebP)" },
+      { error: `Arquivo muito grande (máx. ${maxBytes / (1024 * 1024)} MB)` },
       { status: 400 },
     );
   }
 
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Arquivo muito grande (máx. 5 MB)" }, { status: 400 });
-  }
-
-  const ext =
-    mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+  const ext = extForMime(mime);
   const fileId = crypto.randomUUID();
   const bucket = "linkora-files";
   const storagePath = `${user.id}/${fileId}.${ext}`;
@@ -70,7 +117,7 @@ export async function POST(request: Request) {
       storage_path: storagePath,
       mime_type: mime,
       byte_size: file.size,
-      purpose,
+      purpose: purposeResolved,
       linked_entity_type: null,
       linked_entity_id: null,
     })

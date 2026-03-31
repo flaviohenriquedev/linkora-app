@@ -26,7 +26,7 @@ export async function GET() {
 
   const { data: rows, error } = await supabase
     .from("provider_services")
-    .select("id, user_id, category_id, title, description, sort_order, is_active, created_at, updated_at")
+    .select("id, user_id, category_id, title, description, price_cents, sort_order, is_active, created_at, updated_at")
     .eq("user_id", user.id)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
@@ -77,6 +77,13 @@ export async function POST(request: Request) {
     typeof body.description === "string" ? body.description.trim() || null : null;
   const sortOrder = typeof body.sort_order === "number" && Number.isFinite(body.sort_order) ? body.sort_order : 0;
 
+  let priceCents: number | null = null;
+  if (body.price_cents === null) {
+    priceCents = null;
+  } else if (typeof body.price_cents === "number" && Number.isFinite(body.price_cents) && body.price_cents >= 0) {
+    priceCents = Math.round(body.price_cents);
+  }
+
   if (!categoryId) {
     return NextResponse.json({ error: "category_id é obrigatório" }, { status: 400 });
   }
@@ -93,10 +100,11 @@ export async function POST(request: Request) {
       category_id: categoryId,
       title,
       description,
+      price_cents: priceCents,
       sort_order: sortOrder,
       is_active: true,
     })
-    .select("id, user_id, category_id, title, description, sort_order, is_active, created_at, updated_at")
+    .select("id, user_id, category_id, title, description, price_cents, sort_order, is_active, created_at, updated_at")
     .single();
 
   if (error || !row) {

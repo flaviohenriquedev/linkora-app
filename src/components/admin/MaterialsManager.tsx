@@ -3,63 +3,53 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 
-type Course = {
+type MaterialRow = {
   id: string;
   title: string;
-  slug: string;
-  description: string | null;
-  image_file_id: string | null;
   attachment_file_id: string | null;
-  external_link: string | null;
-  is_published: boolean;
   sort_order: number;
+  is_published: boolean;
 };
 
-async function uploadFile(file: File, asImage: boolean) {
+async function uploadDoc(file: File) {
   const fd = new FormData();
   fd.append("file", file);
-  fd.append("purpose", asImage ? "product_image" : "document");
+  fd.append("purpose", "document");
   const res = await fetch("/api/files/upload", { method: "POST", body: fd });
   const json = (await res.json()) as { file?: { id: string }; error?: string };
   if (!res.ok) throw new Error(json.error ?? "Falha no upload");
   return json.file!.id;
 }
 
-export function CoursesManager() {
-  const [items, setItems] = useState<Course[]>([]);
+export function MaterialsManager() {
+  const [items, setItems] = useState<MaterialRow[]>([]);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [externalLink, setExternalLink] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
-  const [imageFileId, setImageFileId] = useState<string | null>(null);
   const [attachmentFileId, setAttachmentFileId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Course | null>(null);
+  const [editing, setEditing] = useState<MaterialRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/admin/courses", { cache: "no-store" });
-    const json = (await res.json()) as { courses?: Course[]; error?: string };
+    const res = await fetch("/api/admin/materials", { cache: "no-store" });
+    const json = (await res.json()) as { materials?: MaterialRow[]; error?: string };
     if (!res.ok) {
-      setError(json.error ?? "Erro ao carregar cursos");
+      setError(json.error ?? "Erro ao carregar materiais");
       return;
     }
-    setItems(json.courses ?? []);
+    setItems(json.materials ?? []);
   }
 
   useEffect(() => {
     void load();
   }, []);
 
-  function startEdit(item: Course) {
+  function startEdit(item: MaterialRow) {
     setEditing(item);
     setTitle(item.title);
-    setDescription(item.description ?? "");
-    setExternalLink(item.external_link ?? "");
     setSortOrder(item.sort_order);
     setIsPublished(item.is_published);
-    setImageFileId(item.image_file_id);
     setAttachmentFileId(item.attachment_file_id);
     setError(null);
   }
@@ -67,11 +57,8 @@ export function CoursesManager() {
   function cancelEdit() {
     setEditing(null);
     setTitle("");
-    setDescription("");
-    setExternalLink("");
     setSortOrder(0);
     setIsPublished(false);
-    setImageFileId(null);
     setAttachmentFileId(null);
   }
 
@@ -79,23 +66,20 @@ export function CoursesManager() {
     setError(null);
     if (!title.trim()) return;
     setLoading(true);
-    const res = await fetch("/api/admin/courses", {
+    const res = await fetch("/api/admin/materials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
-        description,
         sort_order: sortOrder,
         is_published: isPublished,
-        image_file_id: imageFileId,
         attachment_file_id: attachmentFileId,
-        external_link: externalLink.trim() || null,
       }),
     });
     const json = (await res.json()) as { error?: string };
     setLoading(false);
     if (!res.ok) {
-      setError(json.error ?? "Erro ao criar curso");
+      setError(json.error ?? "Erro ao criar material");
       return;
     }
     cancelEdit();
@@ -107,31 +91,28 @@ export function CoursesManager() {
     setError(null);
     if (!title.trim()) return;
     setLoading(true);
-    const res = await fetch(`/api/admin/courses/${editing.id}`, {
+    const res = await fetch(`/api/admin/materials/${editing.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
-        description,
         sort_order: sortOrder,
         is_published: isPublished,
-        image_file_id: imageFileId,
         attachment_file_id: attachmentFileId,
-        external_link: externalLink.trim() || null,
       }),
     });
     const json = (await res.json()) as { error?: string };
     setLoading(false);
     if (!res.ok) {
-      setError(json.error ?? "Erro ao salvar curso");
+      setError(json.error ?? "Erro ao salvar material");
       return;
     }
     cancelEdit();
     await load();
   }
 
-  async function togglePublished(item: Course) {
-    const res = await fetch(`/api/admin/courses/${item.id}`, {
+  async function togglePublished(item: MaterialRow) {
+    const res = await fetch(`/api/admin/materials/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_published: !item.is_published }),
@@ -140,8 +121,8 @@ export function CoursesManager() {
     await load();
   }
 
-  async function remove(item: Course) {
-    const res = await fetch(`/api/admin/courses/${item.id}`, { method: "DELETE" });
+  async function remove(item: MaterialRow) {
+    const res = await fetch(`/api/admin/materials/${item.id}`, { method: "DELETE" });
     if (!res.ok) return;
     if (editing?.id === item.id) cancelEdit();
     await load();
@@ -153,88 +134,50 @@ export function CoursesManager() {
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-bg-card p-4">
         <h2 className="mb-3 text-lg text-text-primary">
-          {isEditing ? "Editar curso" : "Novo curso"}
+          {isEditing ? "Editar material" : "Novo material"}
         </h2>
         <div className="grid gap-3">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título do curso"
+            placeholder="Título"
             className="min-h-[44px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
           />
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Descrição"
-            rows={4}
-            className="rounded-lg border border-border bg-bg-primary px-3 py-2 text-text-primary outline-none focus:border-gold"
-          />
-          <input
-            value={externalLink}
-            onChange={(e) => setExternalLink(e.target.value)}
-            placeholder="Link externo (URL)"
-            type="url"
-            className="min-h-[44px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
-          />
-          <div className="flex flex-wrap gap-4">
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Imagem do card</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      setImageFileId(await uploadFile(f, true));
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
-              />
-            </label>
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Arquivo anexado</span>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.zip,application/pdf"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      setAttachmentFileId(await uploadFile(f, false));
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
-              />
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {imageFileId ? (
-              <Button type="button" variant="outline" onClick={() => setImageFileId(null)}>
-                Remover imagem
-              </Button>
-            ) : null}
+          <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
+            <span className="font-medium text-text-primary">Arquivo anexado</span>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.zip,application/pdf"
+              className="max-w-full text-sm"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                void (async () => {
+                  try {
+                    setAttachmentFileId(await uploadDoc(f));
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Erro no upload");
+                  }
+                })();
+              }}
+            />
             {attachmentFileId ? (
-              <Button type="button" variant="outline" onClick={() => setAttachmentFileId(null)}>
-                Remover anexo
-              </Button>
-            ) : null}
-          </div>
+              <span className="text-xs text-green-light">Arquivo definido</span>
+            ) : (
+              <span className="text-xs text-text-muted">Obrigatório para download público</span>
+            )}
+          </label>
+          {attachmentFileId ? (
+            <Button type="button" variant="outline" className="w-fit" onClick={() => setAttachmentFileId(null)}>
+              Remover arquivo
+            </Button>
+          ) : null}
           <input
             type="number"
             value={sortOrder}
             onChange={(e) => setSortOrder(Number(e.target.value))}
-            placeholder="Ordem de exibição"
+            placeholder="Ordem"
             className="min-h-[44px] max-w-[200px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
           />
           <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
@@ -258,7 +201,7 @@ export function CoursesManager() {
               </>
             ) : (
               <Button variant="gold" disabled={loading} onClick={() => void saveCreate()}>
-                {loading ? "Salvando..." : "Criar curso"}
+                {loading ? "Salvando..." : "Criar material"}
               </Button>
             )}
           </div>
@@ -267,7 +210,7 @@ export function CoursesManager() {
       </div>
 
       <div className="rounded-xl border border-border bg-bg-card p-4">
-        <h2 className="mb-3 text-lg text-text-primary">Cursos</h2>
+        <h2 className="mb-3 text-lg text-text-primary">Materiais</h2>
         <div className="space-y-2">
           {items.map((item) => (
             <div
@@ -276,9 +219,7 @@ export function CoursesManager() {
             >
               <div>
                 <p className="font-medium text-text-primary">{item.title}</p>
-                <p className="text-xs text-text-muted">
-                  {item.slug} · ordem {item.sort_order}
-                </p>
+                <p className="text-xs text-text-muted">ordem {item.sort_order}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" onClick={() => void togglePublished(item)}>
@@ -294,7 +235,7 @@ export function CoursesManager() {
             </div>
           ))}
           {items.length === 0 ? (
-            <p className="text-sm text-text-muted">Nenhum curso cadastrado.</p>
+            <p className="text-sm text-text-muted">Nenhum material cadastrado.</p>
           ) : null}
         </div>
       </div>

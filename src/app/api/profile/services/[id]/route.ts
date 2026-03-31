@@ -48,6 +48,11 @@ export async function PATCH(request: Request, ctx: Ctx) {
   }
   if (typeof body.sort_order === "number" && Number.isFinite(body.sort_order)) patch.sort_order = body.sort_order;
   if (typeof body.is_active === "boolean") patch.is_active = body.is_active;
+  if (body.price_cents === null) {
+    patch.price_cents = null;
+  } else if (typeof body.price_cents === "number" && Number.isFinite(body.price_cents) && body.price_cents >= 0) {
+    patch.price_cents = Math.round(body.price_cents);
+  }
 
   if (typeof body.category_id === "string" && body.category_id.trim()) {
     const cid = body.category_id.trim();
@@ -67,7 +72,7 @@ export async function PATCH(request: Request, ctx: Ctx) {
     .update(patch)
     .eq("id", id)
     .eq("user_id", user.id)
-    .select("id, user_id, category_id, title, description, sort_order, is_active, created_at, updated_at")
+    .select("id, user_id, category_id, title, description, price_cents, sort_order, is_active, created_at, updated_at")
     .maybeSingle();
 
   if (error) {

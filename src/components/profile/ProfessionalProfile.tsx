@@ -9,6 +9,7 @@ import {
   CategoryAutocomplete,
   type CategoryOption,
 } from "@/components/profile/CategoryAutocomplete";
+import { formatCentsToBrl, maskBrlFromDigits, parseBrlToCents } from "@/lib/currency";
 
 const TABS = [
   { id: "about", label: "Sobre" },
@@ -22,6 +23,7 @@ type ProviderServiceRow = {
   category_id: string;
   title: string;
   description: string | null;
+  price_cents: number | null;
   sort_order: number;
   is_active: boolean;
   category: { id: string; name: string; slug: string } | null;
@@ -48,11 +50,13 @@ export function ProfessionalProfile() {
   const [newTitle, setNewTitle] = useState("");
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null);
   const [newDesc, setNewDesc] = useState("");
+  const [newPriceMasked, setNewPriceMasked] = useState("");
   const [serviceBusy, setServiceBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState("");
+  const [editPriceMasked, setEditPriceMasked] = useState("");
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [uploadBusy, setUploadBusy] = useState(false);
@@ -133,6 +137,7 @@ export function ProfessionalProfile() {
     if (!newCategoryId) return;
     setServiceBusy(true);
     try {
+      const priceCents = parseBrlToCents(newPriceMasked);
       const res = await fetch("/api/profile/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -140,11 +145,13 @@ export function ProfessionalProfile() {
           category_id: newCategoryId,
           title: newTitle.trim() || "Novo serviço",
           description: newDesc.trim() || null,
+          price_cents: priceCents,
         }),
       });
       if (!res.ok) return;
       setNewTitle("");
       setNewDesc("");
+      setNewPriceMasked("");
       setNewCategoryId(null);
       await loadServices();
     } finally {
@@ -169,6 +176,7 @@ export function ProfessionalProfile() {
     setEditTitle(s.title);
     setEditCategoryId(s.category_id);
     setEditDesc(s.description ?? "");
+    setEditPriceMasked(s.price_cents != null ? formatCentsToBrl(s.price_cents) : "");
   }
 
   function cancelEdit() {
@@ -179,6 +187,7 @@ export function ProfessionalProfile() {
     if (!editingId || !editCategoryId) return;
     setServiceBusy(true);
     try {
+      const priceCents = parseBrlToCents(editPriceMasked);
       const res = await fetch(`/api/profile/services/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -186,6 +195,7 @@ export function ProfessionalProfile() {
           title: editTitle.trim() || "Serviço",
           description: editDesc.trim() || null,
           category_id: editCategoryId,
+          price_cents: priceCents,
         }),
       });
       if (!res.ok) return;
@@ -535,6 +545,23 @@ export function ProfessionalProfile() {
                   className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-secondary outline-none focus:border-gold"
                 />
               </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="svc-new-price">
+                  Valor (opcional)
+                </label>
+                <input
+                  id="svc-new-price"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="R$ 0,00"
+                  value={newPriceMasked}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setNewPriceMasked(maskBrlFromDigits(digits));
+                  }}
+                  className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary outline-none focus:border-gold"
+                />
+              </div>
               <Button
                 type="button"
                 variant="gold"
@@ -580,6 +607,20 @@ export function ProfessionalProfile() {
                           rows={2}
                           className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm"
                         />
+                        <div>
+                          <label className="mb-1 block text-xs text-text-muted">Valor</label>
+                          <input
+                            inputMode="numeric"
+                            autoComplete="off"
+                            placeholder="R$ 0,00"
+                            value={editPriceMasked}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, "");
+                              setEditPriceMasked(maskBrlFromDigits(digits));
+                            }}
+                            className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm"
+                          />
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           <Button
                             type="button"
@@ -602,6 +643,11 @@ export function ProfessionalProfile() {
                           <p className="mt-1 text-xs text-green-light">
                             {s.category?.name ?? "Categoria"}
                           </p>
+                          {s.price_cents != null ? (
+                            <p className="mt-1 text-sm font-medium text-gold">
+                              R$ {formatCentsToBrl(s.price_cents)}
+                            </p>
+                          ) : null}
                           {s.description ? (
                             <p className="mt-2 text-sm text-text-secondary">{s.description}</p>
                           ) : null}

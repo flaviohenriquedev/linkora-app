@@ -33,7 +33,20 @@ export default function HomePage() {
       </Suspense>
       <HowItWorks />
       <CtaKa />
-      <BlogPreview />
+      <Suspense
+        fallback={
+          <div className="mx-auto w-full max-w-[1200px] px-4 pb-16 sm:px-6 sm:pb-24">
+            <div className="mx-auto mb-8 h-8 max-w-xs animate-pulse rounded bg-bg-card sm:mb-12" />
+            <div className="grid gap-5 md:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-64 animate-pulse rounded-2xl bg-bg-card" />
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <BlogPreview />
+      </Suspense>
     </main>
   );
 }

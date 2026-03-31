@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { GoogleLoginButton } from "@/components/login/GoogleLoginButton";
 import { createClient } from "@/lib/supabase/client";
@@ -20,9 +21,67 @@ function homePath(role: Role): string {
   return role === "provider" ? "/profile" : "/owner";
 }
 
-export function RegisterFormPanel() {
+function homePathFromDb(db: "owner" | "provider"): string {
+  return db === "provider" ? "/profile" : "/owner";
+}
+
+function roleLabelDb(r: "owner" | "provider"): string {
+  return r === "provider" ? "Prestador" : "Empresário";
+}
+
+async function fetchAccountStatus(email: string) {
+  const res = await fetch("/api/auth/account-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const j = (await res.json()) as {
+    exists?: boolean;
+    oauthOnly?: boolean;
+    roles?: ("owner" | "provider")[];
+    error?: string;
+  };
+  if (!res.ok) throw new Error(j.error ?? "Não foi possível verificar a conta");
+  return j;
+}
+
+async function activateRoleDb(dbRole: "owner" | "provider") {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Sessão não encontrada. Tente entrar novamente.");
+  }
+  const res = await fetch("/api/auth/activate-role", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    credentials: "include",
+    body: JSON.stringify({ role: dbRole }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let j: { error?: string } = {};
+    try {
+      j = text ? (JSON.parse(text) as typeof j) : {};
+    } catch {
+      /* ignore */
+    }
+    throw new Error(j.error ?? "Falha ao ativar tipo de conta");
+  }
+}
+
+type Props = {
+  initialRole?: Role;
+};
+
+export function RegisterFormPanel({ initialRole = "business" }: Props) {
   const router = useRouter();
-  const [role, setRole] = useState<Role>("business");
+  const attachTitleId = useId();
+  const [role, setRole] = useState<Role>(initialRole);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,13 +89,35 @@ export function RegisterFormPanel() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [attachPrompt, setAttachPrompt] = useState<{
+    desired: "owner" | "provider";
+    existingLabels: string;
+  } | null>(null);
 
-  async function activateRole() {
-    await fetch("/api/auth/activate-role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: roleToDb(role) }),
-    });
+  useEffect(() => {
+    if (!attachPrompt) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [attachPrompt]);
+
+  async function confirmAttachRole() {
+    if (!attachPrompt) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await activateRoleDb(attachPrompt.desired);
+      const dest = homePathFromDb(attachPrompt.desired);
+      setAttachPrompt(null);
+      router.push(dest);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao ativar conta");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,17 +145,51 @@ export function RegisterFormPanel() {
         signError.message.toLowerCase().includes("already registered") ||
         signError.message.toLowerCase().includes("already been registered")
       ) {
+        let status: Awaited<ReturnType<typeof fetchAccountStatus>>;
+        try {
+          status = await fetchAccountStatus(email.trim());
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Não foi possível verificar a conta");
+          setLoading(false);
+          return;
+        }
         const { error: loginErr } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
-        if (!loginErr) {
-          await activateRole();
-          router.push(homePath(role));
-          router.refresh();
+        if (loginErr) {
+          setError(loginErr.message);
           setLoading(false);
           return;
         }
+        const desired = roleToDb(role);
+        const existingRoles = status.roles ?? [];
+        if (existingRoles.includes(desired)) {
+          try {
+            await activateRoleDb(desired);
+            router.push(homePath(role));
+            router.refresh();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Erro ao ativar conta");
+          }
+          setLoading(false);
+          return;
+        }
+        if (existingRoles.length > 0) {
+          const existingLabels = existingRoles.map(roleLabelDb).join(" e ");
+          setAttachPrompt({ desired, existingLabels });
+          setLoading(false);
+          return;
+        }
+        try {
+          await activateRoleDb(desired);
+          router.push(homePath(role));
+          router.refresh();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Erro ao ativar conta");
+        }
+        setLoading(false);
+        return;
       }
       setError(signError.message);
       setLoading(false);
@@ -82,9 +197,13 @@ export function RegisterFormPanel() {
     }
 
     if (data.session) {
-      await activateRole();
-      router.push(homePath(role));
-      router.refresh();
+      try {
+        await activateRoleDb(roleToDb(role));
+        router.push(homePath(role));
+        router.refresh();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao ativar conta");
+      }
       setLoading(false);
       return;
     }
@@ -97,6 +216,54 @@ export function RegisterFormPanel() {
 
   return (
     <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
+      {attachPrompt && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[2000] flex items-end justify-center bg-black/65 p-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] backdrop-blur-sm sm:items-center sm:p-4"
+              role="presentation"
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={attachTitleId}
+                className="w-full max-w-lg rounded-t-2xl border border-border bg-bg-card p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+              >
+                <h2 id={attachTitleId} className="font-serif text-lg font-medium text-text-primary sm:text-xl">
+                  Conta existente
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                  Já existe uma conta para este e-mail com o tipo{" "}
+                  <span className="font-medium text-text-primary">{attachPrompt.existingLabels}</span>. Deseja anexar o
+                  tipo <span className="font-medium text-gold">{roleLabelDb(attachPrompt.desired)}</span>?
+                </p>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    className="min-h-[48px] rounded-xl border border-border px-4 py-3 text-[15px] text-text-secondary transition hover:bg-bg-primary"
+                    disabled={loading}
+                    onClick={() => {
+                      setAttachPrompt(null);
+                      setInfo(
+                        "Nenhum papel novo foi adicionado. Você pode entrar pelo login com o tipo de conta que já possui.",
+                      );
+                    }}
+                  >
+                    Não
+                  </button>
+                  <button
+                    type="button"
+                    className="min-h-[48px] rounded-xl bg-gold px-4 py-3 text-[15px] font-medium text-bg-primary transition hover:opacity-95 disabled:opacity-60"
+                    disabled={loading}
+                    onClick={() => void confirmAttachRole()}
+                  >
+                    {loading ? "Aplicando…" : "Sim, anexar"}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
       <div className="mx-auto w-full max-w-xl animate-fade-in">
         <h2 className="font-serif text-[1.65rem] font-medium leading-tight tracking-tight text-text-primary sm:text-3xl sm:leading-snug md:text-4xl">
           Criar conta

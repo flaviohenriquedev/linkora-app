@@ -1,7 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { tryCreateClient } from "@/lib/supabase/server";
 
 export async function isCurrentUserAdmin() {
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    return { isAdmin: false, user: null as null };
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();

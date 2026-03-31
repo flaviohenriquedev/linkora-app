@@ -2,14 +2,19 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ProfessionalProfile } from "@/components/profile/ProfessionalProfile";
 import { getActiveRoleCookie } from "@/lib/auth/activeRole";
-import { createClient } from "@/lib/supabase/server";
+import { tryCreateClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Perfil — LINKORA",
 };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    redirect("/login?next=/profile");
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();

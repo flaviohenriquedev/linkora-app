@@ -2,14 +2,19 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { UserProfileView } from "@/components/user/UserProfileView";
 import { getActiveRoleCookie } from "@/lib/auth/activeRole";
-import { createClient } from "@/lib/supabase/server";
+import { tryCreateClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Área do proprietário — LINKORA",
 };
 
 export default async function OwnerHomePage() {
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    redirect("/login?next=/owner");
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();

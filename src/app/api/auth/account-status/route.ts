@@ -23,14 +23,28 @@ export async function POST(request: Request) {
 
     const user = data.users.find((u) => u.email?.toLowerCase() === email);
     if (!user) {
-      return NextResponse.json({ exists: false, oauthOnly: false });
+      return NextResponse.json({ exists: false, oauthOnly: false, roles: [] });
     }
 
     const hasEmailIdentity = user.identities?.some((i) => i.provider === "email") ?? false;
 
+    const { data: roleRows, error: rolesErr } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    if (rolesErr) {
+      return NextResponse.json({ error: rolesErr.message }, { status: 500 });
+    }
+
+    const roles = (roleRows ?? [])
+      .map((r) => r.role)
+      .filter((r): r is "owner" | "provider" => r === "owner" || r === "provider");
+
     return NextResponse.json({
       exists: true,
       oauthOnly: !hasEmailIdentity,
+      roles,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erro no servidor";

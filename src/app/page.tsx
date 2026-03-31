@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { BlogPreview } from "@/components/home/BlogPreview";
-
-/** Home lê categorias do banco; sem isso o build pode cachear HTML sem categorias novas. */
-export const dynamic = "force-dynamic";
 import { CtaKa } from "@/components/home/CtaKa";
 import { ExploreCategories } from "@/components/home/ExploreCategories";
 import { HeroSection } from "@/components/home/HeroSection";
 import { HomeProfessionalsGrid } from "@/components/home/HomeProfessionalsGrid";
 import { HowItWorks } from "@/components/home/HowItWorks";
+
+/** Home lê categorias do banco; sem isso o build pode cachear HTML sem categorias novas. */
+export const dynamic = "force-dynamic";
 
 function ExploreCategoriesFallback() {
   return (

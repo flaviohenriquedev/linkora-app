@@ -1,11 +1,14 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { ExploreCategoriesClient } from "@/components/home/ExploreCategoriesClient";
+import { tryCreateClient } from "@/lib/supabase/server";
 
 /** Carrega categorias ativas de `public.categories` no servidor (render direto da tabela). */
 export async function ExploreCategories() {
   noStore();
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    return <ExploreCategoriesClient categories={[]} />;
+  }
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug")

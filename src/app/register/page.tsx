@@ -7,10 +7,16 @@ export const metadata: Metadata = {
   description: "Crie sua conta Linkora.",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string }>;
+}) {
+  const sp = await searchParams;
+  const initialRole = sp.role === "provider" ? "provider" : "business";
   return (
     <AuthSplitPage>
-      <RegisterFormPanel />
+      <RegisterFormPanel initialRole={initialRole} />
     </AuthSplitPage>
   );
 }

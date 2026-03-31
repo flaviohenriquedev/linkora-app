@@ -17,6 +17,16 @@ const TABS = [
   { id: "reviews", label: "Avaliações" },
 ] as const;
 
+type ProviderServiceRow = {
+  id: string;
+  category_id: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  category: { id: string; name: string; slug: string } | null;
+};
+
 function initials(name: string) {
   const p = name.trim().split(/\s+/).filter(Boolean);
   if (p.length === 0) return "?";
@@ -25,15 +35,24 @@ function initials(name: string) {
 }
 
 export function ProfessionalProfile() {
-  const { profile, avatarUrl, refresh, loading: authLoading } = useAuth();
+  const { profile, avatarUrl, refresh, loading, profileLoading, user } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("about");
 
   const [fullName, setFullName] = useState("");
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
-  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [services, setServices] = useState<ProviderServiceRow[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategoryId, setNewCategoryId] = useState<string | null>(null);
+  const [newDesc, setNewDesc] = useState("");
+  const [serviceBusy, setServiceBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+  const [editDesc, setEditDesc] = useState("");
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [uploadBusy, setUploadBusy] = useState(false);
@@ -49,7 +68,6 @@ export function ProfessionalProfile() {
     setHeadline(profile.headline ?? "");
     setBio(profile.bio ?? "");
     setCity(profile.city ?? "");
-    setCategoryId(profile.category_id ?? null);
   }, [profile]);
 
   useEffect(() => {
@@ -58,6 +76,24 @@ export function ProfessionalProfile() {
       .then((d: { categories?: CategoryOption[] }) => setCategories(d.categories ?? []))
       .catch(() => setCategories([]));
   }, []);
+
+  const loadServices = useCallback(async () => {
+    setServicesLoading(true);
+    try {
+      const res = await fetch("/api/profile/services", { cache: "no-store" });
+      const d = (await res.json()) as { services?: ProviderServiceRow[] };
+      setServices(d.services ?? []);
+    } catch {
+      setServices([]);
+    } finally {
+      setServicesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    void loadServices();
+  }, [profile, loadServices]);
 
   useEffect(() => {
     setLocalAvatarUrl(avatarUrl);
@@ -82,7 +118,6 @@ export function ProfessionalProfile() {
         headline: headline || null,
         bio: bio || null,
         city: city || null,
-        category_id: categoryId,
       }),
     });
     if (!res.ok) {
@@ -92,7 +127,74 @@ export function ProfessionalProfile() {
     setSaveState("saved");
     await refresh();
     setTimeout(() => setSaveState("idle"), 2000);
-  }, [fullName, headline, bio, city, categoryId, refresh]);
+  }, [fullName, headline, bio, city, refresh]);
+
+  async function addService() {
+    if (!newCategoryId) return;
+    setServiceBusy(true);
+    try {
+      const res = await fetch("/api/profile/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category_id: newCategoryId,
+          title: newTitle.trim() || "Novo serviço",
+          description: newDesc.trim() || null,
+        }),
+      });
+      if (!res.ok) return;
+      setNewTitle("");
+      setNewDesc("");
+      setNewCategoryId(null);
+      await loadServices();
+    } finally {
+      setServiceBusy(false);
+    }
+  }
+
+  async function deleteService(id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Excluir este serviço?")) return;
+    setServiceBusy(true);
+    try {
+      await fetch(`/api/profile/services/${id}`, { method: "DELETE" });
+      await loadServices();
+      if (editingId === id) setEditingId(null);
+    } finally {
+      setServiceBusy(false);
+    }
+  }
+
+  function startEdit(s: ProviderServiceRow) {
+    setEditingId(s.id);
+    setEditTitle(s.title);
+    setEditCategoryId(s.category_id);
+    setEditDesc(s.description ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editCategoryId) return;
+    setServiceBusy(true);
+    try {
+      const res = await fetch(`/api/profile/services/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle.trim() || "Serviço",
+          description: editDesc.trim() || null,
+          category_id: editCategoryId,
+        }),
+      });
+      if (!res.ok) return;
+      setEditingId(null);
+      await loadServices();
+    } finally {
+      setServiceBusy(false);
+    }
+  }
 
   function onCropComplete(_: Area, areaPixels: Area) {
     setCroppedAreaPixels(areaPixels);
@@ -139,6 +241,24 @@ export function ProfessionalProfile() {
     setZoom(1);
   }
 
+  async function removeAvatar() {
+    setUploadBusy(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar_file_id: null }),
+      });
+      if (!res.ok) throw new Error("Não foi possível remover a foto");
+      setLocalAvatarUrl(null);
+      await refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUploadBusy(false);
+    }
+  }
+
   async function confirmCropAndUpload() {
     if (!sourceImage || !croppedAreaPixels) return;
     setUploadBusy(true);
@@ -174,7 +294,7 @@ export function ProfessionalProfile() {
     }
   }
 
-  if (authLoading && !profile) {
+  if ((loading && !user) || (user && profileLoading && !profile)) {
     return (
       <Container className="py-10">
         <p className="text-text-secondary">Carregando perfil…</p>
@@ -236,8 +356,8 @@ export function ProfessionalProfile() {
         <div>
           <h1 className="font-serif text-2xl text-text-primary sm:text-3xl">Meu perfil profissional</h1>
           <p className="mt-1 max-w-xl text-sm text-text-secondary">
-            Edite como você aparece para clientes. Use “Salvar alterações” para gravar nome, categoria e
-            texto.
+            Edite como você aparece para clientes. Use “Salvar alterações” para gravar nome e texto; em
+            Serviços, cadastre categorias por oferta.
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
@@ -260,32 +380,47 @@ export function ProfessionalProfile() {
         <div className="h-[96px] overflow-hidden rounded-t-2xl bg-gradient-to-r from-bg-secondary via-green-main/80 to-bg-secondary sm:h-[120px]" />
         <div className="relative flex flex-col gap-8 px-4 pb-8 pt-0 sm:px-8 lg:flex-row lg:items-start lg:gap-10 lg:px-10">
           <div className="-mt-12 flex shrink-0 flex-col items-center gap-3 sm:items-start">
-            <div className="relative h-[112px] w-[112px] overflow-hidden rounded-full border-4 border-bg-card bg-green-main shadow-lg ring-1 ring-white/10">
-              {av ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Storage
-                <img src={av} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center font-serif text-3xl font-semibold text-white">
-                  {initials(displayName)}
-                </span>
-              )}
+            <div className="relative h-[112px] w-[112px]">
+              <div className="h-full w-full overflow-hidden rounded-full border-4 border-bg-card bg-green-main shadow-lg ring-1 ring-white/10">
+                {av ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Storage
+                  <img src={av} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center font-serif text-3xl font-semibold text-white">
+                    {initials(displayName)}
+                  </span>
+                )}
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => void onPickAvatar(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                aria-label="Alterar foto de perfil"
+                disabled={uploadBusy}
+                onClick={() => fileRef.current?.click()}
+                className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full border-2 border-bg-card bg-bg-secondary text-gold shadow-md transition hover:bg-bg-primary disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => void onPickAvatar(e.target.files?.[0])}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="text-sm"
-              disabled={uploadBusy}
-              onClick={() => fileRef.current?.click()}
-            >
-              {uploadBusy ? "Enviando…" : "Alterar foto"}
-            </Button>
+            {av ? (
+              <button
+                type="button"
+                disabled={uploadBusy}
+                onClick={() => void removeAvatar()}
+                className="w-full text-sm text-text-muted underline-offset-2 transition hover:text-gold hover:underline disabled:opacity-50"
+              >
+                Remover foto
+              </button>
+            ) : null}
           </div>
 
           <div className="min-w-0 flex-1 space-y-5 pt-2 lg:pt-4">
@@ -326,13 +461,6 @@ export function ProfessionalProfile() {
                 />
               </div>
             </div>
-            <CategoryAutocomplete
-              id="pf-category"
-              label="Categoria (aparece em Explore por categoria)"
-              value={categoryId}
-              onChange={setCategoryId}
-              options={categories}
-            />
           </div>
         </div>
       </section>
@@ -343,11 +471,10 @@ export function ProfessionalProfile() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`border-b-2 pb-3 text-[15px] transition ${
-              tab === t.id
-                ? "border-gold font-medium text-gold"
-                : "border-transparent text-text-secondary hover:text-gold"
-            }`}
+            className={`inline-flex min-h-[44px] items-center border-b-2 pb-3 text-[15px] transition ${tab === t.id
+              ? "border-gold font-medium text-gold"
+              : "border-transparent text-text-secondary hover:text-gold"
+              }`}
           >
             {t.label}
           </button>
@@ -368,17 +495,141 @@ export function ProfessionalProfile() {
       )}
 
       {tab === "services" && (
-        <div className="flex flex-col gap-4">
-          <p className="text-text-muted">
-            Cadastro de serviços e preços virá na próxima etapa; por enquanto use o perfil para validar
-            dados básicos e foto.
+        <div className="flex flex-col gap-6">
+          <p className="text-sm text-text-secondary">
+            Cada serviço pode ter uma categoria (Explore e filtros usarão essas categorias). Adicione,
+            edite ou remova abaixo.
           </p>
-          <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-bg-card p-6 opacity-60 sm:flex-row sm:items-center">
-            <div>
-              <h3 className="mb-1 text-lg">Exemplo: Criação de Coleção</h3>
-              <p className="text-sm text-text-secondary">Configure valores e descrições em breve.</p>
+
+          <div className="rounded-xl border border-border bg-bg-card/50 p-4 sm:p-5">
+            <h3 className="mb-3 text-base font-medium text-text-primary">Novo serviço</h3>
+            <div className="flex flex-col gap-4">
+              <CategoryAutocomplete
+                id="svc-new-cat"
+                label="Categoria"
+                value={newCategoryId}
+                onChange={setNewCategoryId}
+                options={categories}
+              />
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="svc-new-title">
+                  Título
+                </label>
+                <input
+                  id="svc-new-title"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Ex.: Consultoria de coleção"
+                  className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary outline-none focus:border-gold"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="svc-new-desc">
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  id="svc-new-desc"
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-secondary outline-none focus:border-gold"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="gold"
+                className="min-h-[44px] w-full sm:w-auto"
+                disabled={serviceBusy || !newCategoryId}
+                onClick={() => void addService()}
+              >
+                {serviceBusy ? "Salvando…" : "Adicionar serviço"}
+              </Button>
             </div>
-            <span className="font-medium text-gold">Em breve</span>
+          </div>
+
+          <div>
+            <h3 className="mb-3 text-base font-medium text-text-primary">Seus serviços</h3>
+            {servicesLoading ? (
+              <p className="text-sm text-text-muted">Carregando…</p>
+            ) : services.length === 0 ? (
+              <p className="text-sm text-text-muted">Nenhum serviço ainda. Adicione um acima.</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {services.map((s) => (
+                  <li
+                    key={s.id}
+                    className="rounded-xl border border-border bg-bg-card p-4 sm:flex sm:items-start sm:justify-between sm:gap-4"
+                  >
+                    {editingId === s.id ? (
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <CategoryAutocomplete
+                          id={`svc-edit-cat-${s.id}`}
+                          label="Categoria"
+                          value={editCategoryId}
+                          onChange={setEditCategoryId}
+                          options={categories}
+                        />
+                        <input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm"
+                        />
+                        <textarea
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="gold"
+                            className="min-h-[44px]"
+                            disabled={serviceBusy || !editCategoryId}
+                            onClick={() => void saveEdit()}
+                          >
+                            Salvar
+                          </Button>
+                          <Button type="button" variant="outline" className="min-h-[44px]" onClick={cancelEdit}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-text-primary">{s.title}</p>
+                          <p className="mt-1 text-xs text-green-light">
+                            {s.category?.name ?? "Categoria"}
+                          </p>
+                          {s.description ? (
+                            <p className="mt-2 text-sm text-text-secondary">{s.description}</p>
+                          ) : null}
+                        </div>
+                        <div className="mt-3 flex shrink-0 gap-2 sm:mt-0">
+                          <button
+                            type="button"
+                            className="min-h-[44px] rounded-lg border border-border px-3 text-sm text-gold transition hover:bg-bg-primary"
+                            disabled={serviceBusy}
+                            onClick={() => startEdit(s)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="min-h-[44px] rounded-lg border border-border px-3 text-sm text-text-muted transition hover:text-red-400"
+                            disabled={serviceBusy}
+                            onClick={() => void deleteService(s.id)}
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

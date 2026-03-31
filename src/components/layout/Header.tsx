@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogoLinkora } from "@/components/brand/LogoLinkora";
@@ -46,7 +46,6 @@ function abbreviatedName(name: string | undefined, email: string | null | undefi
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -100,7 +99,7 @@ export function Header() {
 
   if (pathname === "/login" || pathname === "/register") return null;
 
-  const me = profileHref(profile?.role);
+  const me = profile ? profileHref(profile.role) : "/profile";
   const initial = userInitial(profile?.full_name, email);
   const displayName = abbreviatedName(profile?.full_name, email);
 
@@ -202,10 +201,7 @@ export function Header() {
                       role="menuitem"
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        void signOut().then(() => {
-                          router.replace("/");
-                          router.refresh();
-                        });
+                        void signOut();
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary hover:text-gold"
                     >
@@ -234,14 +230,14 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1 lg:hidden">
-          {!user ? (
+          {!loading && !user ? (
             <Link
               href="/login"
               className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
             >
               Login
             </Link>
-          ) : (
+          ) : user ? (
             <Link
               href={me}
               className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-gold"
@@ -256,6 +252,10 @@ export function Header() {
                 )}
               </span>
             </Link>
+          ) : (
+            <span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[15px] text-text-muted" aria-hidden>
+              …
+            </span>
           )}
           <button
             type="button"
@@ -317,7 +317,7 @@ export function Header() {
                     </Link>
                   ))}
                   <div className="my-3 border-t border-border" />
-                  {!user ? (
+                  {!loading && !user ? (
                     <>
                       <Link
                         href="/login"
@@ -327,7 +327,7 @@ export function Header() {
                         Login
                       </Link>
                     </>
-                  ) : (
+                  ) : user ? (
                     <>
                       <Link
                         href={me}
@@ -357,17 +357,14 @@ export function Header() {
                         type="button"
                         onClick={() => {
                           closeMenu();
-                          void signOut().then(() => {
-                            router.replace("/");
-                            router.refresh();
-                          });
+                          void signOut();
                         }}
                         className="rounded-xl px-4 py-3.5 text-left text-base text-text-secondary hover:bg-white/5 hover:text-gold"
                       >
                         Sair
                       </button>
                     </>
-                  )}
+                  ) : null}
                   <Link
                     href="/professionals"
                     onClick={closeMenu}

@@ -15,8 +15,6 @@ export type ProfileRow = {
   bio: string | null;
   city: string | null;
   avatar_file_id: string | null;
-  category_id: string | null;
-  category: { id: string; name: string; slug: string } | null;
   created_at: string;
   updated_at: string;
 };
@@ -28,7 +26,10 @@ type AuthContextValue = {
   avatarUrl: string | null;
   /** Presente na tabela `admin_users` — acesso ao painel /admin */
   isAdmin: boolean;
+  /** Sessão resolvida (getUser); false = ainda verificando. Visitantes veem Login cedo. */
   loading: boolean;
+  /** Perfil /api/profile ainda carregando (usuário já logado) */
+  profileLoading: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     let supabase: ReturnType<typeof createClient>;
@@ -54,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setEmail(null);
       setAvatarUrl(null);
       setIsAdmin(false);
+      setProfileLoading(false);
       setLoading(false);
       return;
     }
@@ -69,16 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setAvatarUrl(null);
       setIsAdmin(false);
+      setProfileLoading(false);
       setLoading(false);
       return;
     }
+
+    setLoading(false);
+    setProfileLoading(true);
 
     const res = await fetch("/api/profile", { method: "GET", cache: "no-store" });
     if (!res.ok) {
       setProfile(null);
       setAvatarUrl(null);
       setIsAdmin(false);
-      setLoading(false);
+      setProfileLoading(false);
       return;
     }
 
@@ -90,11 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const p = json.profile;
     if (p && (p.role === "owner" || p.role === "provider")) {
-      setProfile({
-        ...p,
-        category_id: p.category_id ?? null,
-        category: p.category ?? null,
-      });
+      setProfile({ ...p });
     } else {
       setProfile(null);
     }
@@ -102,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAvatarUrl((prev) => json.avatarUrl ?? prev);
     if (json.email) setEmail(json.email);
     setIsAdmin(Boolean(json.isAdmin));
-    setLoading(false);
+    setProfileLoading(false);
   }, []);
 
   useEffect(() => {
@@ -135,17 +138,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       return;
     }
+    setUser(null);
+    setProfile(null);
+    setEmail(null);
+    setAvatarUrl(null);
+    setIsAdmin(false);
+    setProfileLoading(false);
     await supabase.auth.signOut();
     try {
       await fetch("/api/auth/sign-out", { method: "POST" });
     } catch {
       // noop
     }
-    setUser(null);
-    setProfile(null);
-    setEmail(null);
-    setAvatarUrl(null);
-    setIsAdmin(false);
+    if (typeof window !== "undefined") {
+      window.location.assign("/");
+    }
   }, []);
 
   const value = useMemo(
@@ -156,10 +163,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatarUrl,
       isAdmin,
       loading,
+      profileLoading,
       refresh,
       signOut,
     }),
-    [user, profile, email, avatarUrl, isAdmin, loading, refresh, signOut],
+    [user, profile, email, avatarUrl, isAdmin, loading, profileLoading, refresh, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

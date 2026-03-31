@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { GoogleLoginButton } from "@/components/login/GoogleLoginButton";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   nextPath?: string;
+  /** OAuth: voltou sem conta Empresário — abre o alerta. */
+  initialNeedOwnerRegister?: boolean;
 };
 
 type Role = "business" | "provider";
@@ -21,9 +23,13 @@ function homePath(role: Role): string {
   return role === "provider" ? "/profile" : "/owner";
 }
 
-export function LoginFormPanel({ nextPath = "/" }: Props) {
+type ActivateResult =
+  | { ok: true; redirectTo: string }
+  | { ok: false; code: "NO_OWNER_ACCOUNT" };
+
+export function LoginFormPanel({ nextPath = "/", initialNeedOwnerRegister = false }: Props) {
   const router = useRouter();
-  const [role, setRole] = useState<Role>("business");
+  const [role, setRole] = useState<Role>("provider");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -36,21 +42,64 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOwnerRegisterModal, setShowOwnerRegisterModal] = useState(false);
+  const handledOAuthOwnerHint = useRef(false);
 
   const safeNext = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
 
-  async function activateRoleOrThrow() {
+  const cleanLoginHref =
+    safeNext === "/" ? "/login" : `/login?next=${encodeURIComponent(safeNext)}`;
+
+  useEffect(() => {
+    if (!initialNeedOwnerRegister || handledOAuthOwnerHint.current) return;
+    handledOAuthOwnerHint.current = true;
+    setShowOwnerRegisterModal(true);
+    router.replace(cleanLoginHref);
+  }, [initialNeedOwnerRegister, router, cleanLoginHref]);
+
+  const activateRole = useCallback(async (dbRole: "owner" | "provider"): Promise<ActivateResult> => {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Sessão não encontrada. Recarregue a página e entre novamente.");
+    }
+
     const res = await fetch("/api/auth/activate-role", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: roleToDb(role) }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      credentials: "include",
+      body: JSON.stringify({ role: dbRole }),
     });
-    const json = (await res.json()) as { error?: string; redirectTo?: string };
+
+    const text = await res.text();
+    let json: { error?: string; redirectTo?: string; code?: string } = {};
+    try {
+      json = text ? (JSON.parse(text) as typeof json) : {};
+    } catch {
+      throw new Error(text?.slice(0, 120) || "Resposta inválida do servidor");
+    }
     if (!res.ok) {
+      if (res.status === 403 && json.code === "NO_OWNER_ACCOUNT") {
+        return { ok: false, code: "NO_OWNER_ACCOUNT" };
+      }
       throw new Error(json.error ?? "Falha ao ativar tipo de conta");
     }
-    return json.redirectTo ?? homePath(role);
-  }
+    const redirectTo = json.redirectTo ?? (dbRole === "provider" ? "/profile" : "/owner");
+    return { ok: true, redirectTo };
+  }, []);
+
+  const pushAfterActivate = useCallback(
+    (redirectTo: string) => {
+      router.push(safeNext === "/" ? redirectTo : safeNext);
+      router.refresh();
+    },
+    [router, safeNext],
+  );
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -67,9 +116,15 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
 
     if (!signError) {
       try {
-        const redirectTo = await activateRoleOrThrow();
-        router.push(safeNext === "/" ? redirectTo : safeNext);
-        router.refresh();
+        const result = await activateRole(roleToDb(role));
+        if (!result.ok && result.code === "NO_OWNER_ACCOUNT") {
+          setShowOwnerRegisterModal(true);
+          setLoading(false);
+          return;
+        }
+        if (result.ok) {
+          pushAfterActivate(result.redirectTo);
+        }
         setLoading(false);
         return;
       } catch (e) {
@@ -100,8 +155,6 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
     }
 
     if (signError.message === "Invalid login credentials" && email.trim()) {
-      // Fallback: mesmo sem confirmar via API admin, oferecemos fluxo de definir senha.
-      // Isso cobre contas criadas via Google (sem senha inicial).
       setPasswordSetupMode(true);
       setLoading(false);
       return;
@@ -157,19 +210,65 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
       return;
     }
     try {
-      const redirectTo = await activateRoleOrThrow();
-      router.push(safeNext === "/" ? redirectTo : safeNext);
+      const result = await activateRole(roleToDb(role));
+      if (!result.ok && result.code === "NO_OWNER_ACCOUNT") {
+        setShowOwnerRegisterModal(true);
+        setLoading(false);
+        return;
+      }
+      if (result.ok) {
+        pushAfterActivate(result.redirectTo);
+      }
+      setLoading(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao ativar tipo de conta");
       setLoading(false);
-      return;
     }
-    router.refresh();
-    setLoading(false);
   }
 
   return (
-    <div className="flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
+    <div className="relative flex w-full shrink-0 flex-col justify-start bg-bg-primary px-5 pb-[max(2.75rem,env(safe-area-inset-bottom)+0.5rem)] pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:px-12 md:pt-12 lg:bg-bg-secondary/40 lg:px-16 lg:pt-14 lg:pb-16">
+      {showOwnerRegisterModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
+          role="presentation"
+          onClick={() => setShowOwnerRegisterModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="owner-register-title"
+            className="w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-xl"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <h3 id="owner-register-title" className="font-serif text-lg font-medium text-text-primary">
+              Conta Empresário
+            </h3>
+            <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
+              Você não possui uma conta de Empresário cadastrada. Deseja cadastrar?
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border border-border px-4 py-2.5 text-[15px] font-medium text-text-primary transition hover:bg-bg-primary"
+                onClick={() => setShowOwnerRegisterModal(false)}
+              >
+                Não
+              </button>
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border border-gold bg-gold/15 px-4 py-2.5 text-[15px] font-medium text-gold transition hover:bg-gold/25"
+                onClick={() => {
+                  setShowOwnerRegisterModal(false);
+                  router.push("/register?role=business");
+                }}
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="mx-auto w-full max-w-xl animate-fade-in">
         <h2 className="font-serif text-[1.65rem] font-medium leading-tight tracking-tight text-text-primary sm:text-3xl sm:leading-snug md:text-4xl">
           Bem-vindo de volta
@@ -293,20 +392,6 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setRole("business")}
-                  className={`rounded-xl border p-4 text-left transition ${
-                    role === "business"
-                      ? "border-gold bg-[rgba(201,168,76,0.1)]"
-                      : "border-border bg-bg-card hover:border-gold/50"
-                  }`}
-                >
-                  <span className="mb-1 block text-base font-medium text-gold">Empresário</span>
-                  <span className="text-[13px] leading-snug text-text-secondary">
-                    Contratar profissionais e fornecedores.
-                  </span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => setRole("provider")}
                   className={`rounded-xl border p-4 text-left transition ${
                     role === "provider"
@@ -319,6 +404,20 @@ export function LoginFormPanel({ nextPath = "/" }: Props) {
                   </span>
                   <span className="text-[13px] leading-snug text-text-secondary">
                     Oferecer serviços e portfólio.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("business")}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    role === "business"
+                      ? "border-gold bg-[rgba(201,168,76,0.1)]"
+                      : "border-border bg-bg-card hover:border-gold/50"
+                  }`}
+                >
+                  <span className="mb-1 block text-base font-medium text-gold">Empresário</span>
+                  <span className="text-[13px] leading-snug text-text-secondary">
+                    Contratar profissionais e fornecedores.
                   </span>
                 </button>
               </div>

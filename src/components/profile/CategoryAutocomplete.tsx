@@ -99,7 +99,7 @@ export function CategoryAutocomplete({
       <ul
         data-category-listbox
         role="listbox"
-        className="fixed z-[9999] max-h-56 overflow-auto rounded-lg border border-border bg-bg-card py-1 shadow-2xl ring-1 ring-black/20"
+        className="fixed z-[20050] max-h-56 overflow-auto rounded-lg border border-border bg-bg-card py-1 shadow-2xl ring-1 ring-black/20"
         style={{
           top: menuPos.top,
           left: menuPos.left,
@@ -114,6 +114,7 @@ export function CategoryAutocomplete({
               <button
                 type="button"
                 role="option"
+                aria-selected={value === opt.id}
                 className="w-full px-3 py-2.5 text-left text-sm text-text-primary hover:bg-bg-primary"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(opt)}

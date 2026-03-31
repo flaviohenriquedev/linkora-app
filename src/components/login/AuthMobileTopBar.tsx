@@ -14,7 +14,7 @@ export function AuthMobileTopBar() {
       </Link>
       <Link
         href="/"
-        className="inline-flex shrink-0 items-center justify-center rounded-lg px-2 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:text-gold"
+        className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg px-2 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:text-gold"
       >
         ← Início
       </Link>

@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { syncOAuthAvatarIfMissing } from "@/lib/auth/syncOAuthAvatar";
-import { createClient } from "@/lib/supabase/server";
+import { tryCreateClient } from "@/lib/supabase/server";
 
-async function ensureProfileRow(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-) {
+async function ensureProfileRow(supabase: SupabaseClient, userId: string) {
   const { data: existing } = await supabase
     .from("profiles")
     .select("id")
@@ -16,7 +14,10 @@ async function ensureProfileRow(
 }
 
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase indisponível" }, { status: 503 });
+  }
   const {
     data: { user },
     error: userError,
@@ -30,9 +31,7 @@ export async function GET() {
 
   let { data: profile, error } = await supabase
     .from("profiles")
-    .select(
-      "id, role, full_name, headline, bio, city, avatar_file_id, category_id, created_at, updated_at",
-    )
+    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -44,22 +43,10 @@ export async function GET() {
     await syncOAuthAvatarIfMissing(supabase, user);
     const { data: again } = await supabase
       .from("profiles")
-      .select(
-        "id, role, full_name, headline, bio, city, avatar_file_id, category_id, created_at, updated_at",
-      )
+      .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
       .eq("id", user.id)
       .maybeSingle();
     if (again) profile = again;
-  }
-
-  let category: { id: string; name: string; slug: string } | null = null;
-  if (profile?.category_id) {
-    const { data: cat } = await supabase
-      .from("categories")
-      .select("id, name, slug")
-      .eq("id", profile.category_id)
-      .maybeSingle();
-    if (cat) category = cat;
   }
 
   const { data: adminRow, error: adminErr } = await supabase
@@ -86,7 +73,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    profile: profile ? { ...profile, category } : null,
+    profile: profile ?? null,
     avatarUrl,
     email: user.email,
     isAdmin,
@@ -94,7 +81,10 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const supabase = await createClient();
+  const supabase = await tryCreateClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase indisponível" }, { status: 503 });
+  }
   const {
     data: { user },
     error: userError,
@@ -113,6 +103,27 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
+  if (body.avatar_file_id === null) {
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("avatar_file_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    const oldId = current?.avatar_file_id;
+    if (oldId) {
+      const { data: fileRow } = await supabase
+        .from("files")
+        .select("bucket, storage_path")
+        .eq("id", oldId)
+        .maybeSingle();
+      const bucket = fileRow?.bucket ?? "linkora-files";
+      if (fileRow?.storage_path) {
+        await supabase.storage.from(bucket).remove([fileRow.storage_path]);
+      }
+      await supabase.from("files").delete().eq("id", oldId);
+    }
+  }
+
   const patch: Record<string, string | null> = {};
   if (typeof body.full_name === "string") patch.full_name = body.full_name;
   if (typeof body.headline === "string") patch.headline = body.headline;
@@ -121,22 +132,6 @@ export async function PATCH(request: Request) {
   if (body.avatar_file_id === null) patch.avatar_file_id = null;
   if (typeof body.avatar_file_id === "string") patch.avatar_file_id = body.avatar_file_id;
 
-  if (body.category_id === null) {
-    patch.category_id = null;
-  } else if (typeof body.category_id === "string" && body.category_id.trim()) {
-    const cid = body.category_id.trim();
-    const { data: cat, error: catErr } = await supabase
-      .from("categories")
-      .select("id")
-      .eq("id", cid)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (catErr || !cat) {
-      return NextResponse.json({ error: "Categoria inválida ou inativa" }, { status: 400 });
-    }
-    patch.category_id = cid;
-  }
-
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "Nenhum campo válido" }, { status: 400 });
   }
@@ -144,9 +139,7 @@ export async function PATCH(request: Request) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .upsert({ id: user.id, ...patch }, { onConflict: "id" })
-    .select(
-      "id, role, full_name, headline, bio, city, avatar_file_id, category_id, created_at, updated_at",
-    )
+    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
     .maybeSingle();
 
   if (error || !profile) {
@@ -156,15 +149,5 @@ export async function PATCH(request: Request) {
     );
   }
 
-  let category: { id: string; name: string; slug: string } | null = null;
-  if (profile.category_id) {
-    const { data: cat } = await supabase
-      .from("categories")
-      .select("id, name, slug")
-      .eq("id", profile.category_id)
-      .maybeSingle();
-    if (cat) category = cat;
-  }
-
-  return NextResponse.json({ profile: { ...profile, category } });
+  return NextResponse.json({ profile });
 }

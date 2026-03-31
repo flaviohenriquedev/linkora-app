@@ -43,10 +43,10 @@ export function UserProfileView() {
   }
 
   return (
-    <Container className="max-w-[900px] py-10">
+    <Container className="max-w-[900px] px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-bg-card">
         <div className="h-[100px] bg-gradient-to-r from-bg-card to-gold" />
-        <div className="flex flex-wrap items-end justify-between gap-4 px-8 pb-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 px-4 pb-6 pt-2 sm:px-8 sm:pb-8">
           <div className="-mt-10 flex items-end gap-6">
             <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-bg-card bg-green-main text-3xl font-bold text-white">
               {avatarLetter}
@@ -101,7 +101,7 @@ export function UserProfileView() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`border-b-2 pb-3 text-[15px] transition ${
+            className={`inline-flex min-h-[44px] items-center border-b-2 pb-3 text-[15px] transition ${
               tab === t.id
                 ? "border-gold font-medium text-gold"
                 : "border-transparent text-text-secondary hover:text-gold"

@@ -15,6 +15,20 @@ export type PublicProfessional = {
   color: string;
   stars: number;
   reviews: number;
+  /** Ex.: "A partir de R$ 120,00" quando há preço em algum serviço */
+  priceLabel: string | null;
+};
+
+export type PublicServiceRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  price_cents: number | null;
+  category: { name: string; slug: string } | null;
+};
+
+export type PublicProfessionalDetail = PublicProfessional & {
+  services: PublicServiceRow[];
 };
 
 export function professionalPath(p: Pick<PublicProfessional, "slug">) {

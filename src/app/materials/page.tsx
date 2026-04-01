@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Materiais para download.",
 };
 
-export default function MateriaisPage() {
+export default function MaterialsPage() {
   return (
     <main className="min-h-[calc(100vh-72px)] animate-fade-in">
       <div className="border-b border-border bg-gradient-to-b from-bg-secondary/80 to-bg-primary py-12 sm:py-16">

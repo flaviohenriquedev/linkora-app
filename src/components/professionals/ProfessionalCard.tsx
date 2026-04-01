@@ -32,6 +32,9 @@ export function ProfessionalCard({ professional: p }: Props) {
             {p.specialty}
           </span>
           <p className="text-[13px] text-text-muted">{p.city}</p>
+          {p.priceLabel ? (
+            <p className="mt-1 text-sm font-medium text-gold">{p.priceLabel}</p>
+          ) : null}
         </div>
       </Link>
       <div className="mb-4 flex items-center gap-2 text-sm text-text-secondary">

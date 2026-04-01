@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminAttachmentField } from "@/components/admin/AdminAttachmentField";
+import { AdminCardImageField } from "@/components/admin/AdminCardImageField";
 import { Button } from "@/components/ui/Button";
 
 type ArticleRow = {
@@ -13,17 +15,8 @@ type ArticleRow = {
   attachment_file_id: string | null;
   is_published: boolean;
   published_at: string | null;
+  created_at: string;
 };
-
-async function uploadFile(file: File, asImage: boolean) {
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("purpose", asImage ? "product_image" : "document");
-  const res = await fetch("/api/files/upload", { method: "POST", body: fd });
-  const json = (await res.json()) as { file?: { id: string }; error?: string; signedUrl?: string | null };
-  if (!res.ok) throw new Error(json.error ?? "Falha no upload");
-  return json.file!.id;
-}
 
 export function ArticlesManager() {
   const [items, setItems] = useState<ArticleRow[]>([]);
@@ -35,16 +28,21 @@ export function ArticlesManager() {
   const [isPublished, setIsPublished] = useState(false);
   const [editing, setEditing] = useState<ArticleRow | null>(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/admin/blog-posts", { cache: "no-store" });
-    const json = (await res.json()) as { posts?: ArticleRow[]; error?: string };
-    if (!res.ok) {
-      setError(json.error ?? "Erro ao carregar artigos");
-      return;
+    try {
+      const res = await fetch("/api/admin/blog-posts", { cache: "no-store" });
+      const json = (await res.json()) as { posts?: ArticleRow[]; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao carregar artigos");
+        return;
+      }
+      setItems(json.posts ?? []);
+    } finally {
+      setListLoading(false);
     }
-    setItems(json.posts ?? []);
   }
 
   useEffect(() => {
@@ -171,71 +169,21 @@ export function ArticlesManager() {
             rows={10}
             className="rounded-lg border border-border bg-bg-primary px-3 py-2 text-text-primary outline-none focus:border-gold"
           />
-          <div className="flex flex-wrap gap-4">
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Imagem do card</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      const id = await uploadFile(f, true);
-                      setImageFileId(id);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
+            <div className="min-w-0">
+              <AdminCardImageField
+                fileId={imageFileId}
+                onFileIdChange={setImageFileId}
+                onError={(msg) => setError(msg)}
               />
-              {imageFileId ? (
-                <span className="text-xs text-green-light">Imagem definida · </span>
-              ) : (
-                <span className="text-xs text-text-muted">Opcional · JPEG, PNG ou WebP</span>
-              )}
-            </label>
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Arquivo anexado</span>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.zip,application/pdf"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      const id = await uploadFile(f, false);
-                      setAttachmentFileId(id);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
+            </div>
+            <div className="min-w-0">
+              <AdminAttachmentField
+                fileId={attachmentFileId}
+                onFileIdChange={setAttachmentFileId}
+                onError={(msg) => setError(msg)}
               />
-              {attachmentFileId ? (
-                <span className="text-xs text-green-light">Anexo definido</span>
-              ) : (
-                <span className="text-xs text-text-muted">PDF, Office, ZIP…</span>
-              )}
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {imageFileId ? (
-              <Button type="button" variant="outline" onClick={() => setImageFileId(null)}>
-                Remover imagem
-              </Button>
-            ) : null}
-            {attachmentFileId ? (
-              <Button type="button" variant="outline" onClick={() => setAttachmentFileId(null)}>
-                Remover anexo
-              </Button>
-            ) : null}
+            </div>
           </div>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
             <input
@@ -268,6 +216,15 @@ export function ArticlesManager() {
 
       <div className="rounded-xl border border-border bg-bg-card p-4">
         <h2 className="mb-3 text-lg text-text-primary">Artigos</h2>
+        {listLoading ? (
+          <div className="space-y-2" aria-busy="true" aria-label="Carregando lista">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-[4.5rem] animate-pulse rounded-lg bg-white/[0.06]" />
+            ))}
+            <p className="pt-2 text-center text-sm text-text-muted">Carregando…</p>
+          </div>
+        ) : null}
+        {!listLoading ? (
         <div className="space-y-2">
           {items.map((item) => (
             <div
@@ -281,6 +238,15 @@ export function ArticlesManager() {
                   <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{item.excerpt}</p>
                 ) : null}
                 <p className="mt-1 text-xs text-text-muted">
+                  Cadastro:{" "}
+                  {new Date(item.created_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {" · "}
                   {[item.image_file_id ? "Imagem" : null, item.attachment_file_id ? "Anexo" : null]
                     .filter(Boolean)
                     .join(" · ") || "Sem mídia"}
@@ -303,6 +269,7 @@ export function ArticlesManager() {
             <p className="text-sm text-text-muted">Nenhum artigo cadastrado.</p>
           ) : null}
         </div>
+        ) : null}
       </div>
     </div>
   );

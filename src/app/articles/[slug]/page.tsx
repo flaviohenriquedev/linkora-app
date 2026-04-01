@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArticlePublicAttachment } from "@/components/content/ArticlePublicAttachment";
+import { ArtigoHeroPublic } from "@/components/content/ArtigoHeroPublic";
 import { Container } from "@/components/ui/Container";
 import { tryCreateClient } from "@/lib/supabase/server";
-import { publicFileRedirectUrl } from "@/lib/publicFileUrl";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ArtigoPage({ params }: Props) {
+export default async function ArticleSlugPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await tryCreateClient();
   if (!supabase) notFound();
@@ -40,40 +41,28 @@ export default async function ArtigoPage({ params }: Props) {
 
   if (!article) notFound();
 
-  const heroSrc = article.image_file_id ? publicFileRedirectUrl(article.image_file_id) : null;
-  const attachHref = article.attachment_file_id ? publicFileRedirectUrl(article.attachment_file_id) : null;
+  const publishedLabel =
+    article.published_at != null
+      ? new Date(article.published_at).toLocaleDateString("pt-BR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "Artigo";
 
   return (
     <main className="min-h-[calc(100vh-72px)]">
-      {heroSrc ? (
-        <div className="relative h-[min(52vh,420px)] w-full overflow-hidden bg-bg-secondary">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/40 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
-            <Container>
-              <p className="text-xs font-medium uppercase tracking-wider text-gold">
-                {article.published_at
-                  ? new Date(article.published_at).toLocaleDateString("pt-BR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "Artigo"}
-              </p>
-              <h1 className="mt-2 max-w-4xl font-serif text-3xl text-text-primary sm:text-4xl md:text-5xl">
-                {article.title}
-              </h1>
-              {article.excerpt ? (
-                <p className="mt-4 max-w-2xl text-lg text-text-secondary">{article.excerpt}</p>
-              ) : null}
-            </Container>
-          </div>
-        </div>
+      {article.image_file_id ? (
+        <ArtigoHeroPublic
+          imageFileId={article.image_file_id}
+          title={article.title}
+          excerpt={article.excerpt}
+          publishedLabel={publishedLabel}
+        />
       ) : (
         <div className="border-b border-border bg-gradient-to-br from-bg-secondary to-bg-primary py-12 sm:py-16">
           <Container>
-            <p className="text-xs font-medium uppercase tracking-wider text-gold">Artigo</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-gold">{publishedLabel}</p>
             <h1 className="mt-2 max-w-4xl font-serif text-3xl text-text-primary sm:text-4xl">{article.title}</h1>
             {article.excerpt ? <p className="mt-4 max-w-2xl text-text-secondary">{article.excerpt}</p> : null}
           </Container>
@@ -89,22 +78,10 @@ export default async function ArtigoPage({ params }: Props) {
               <p className="text-text-muted">Sem conteúdo adicional.</p>
             )}
           </div>
-          {attachHref ? (
-            <div className="mt-10 rounded-2xl border border-gold/30 bg-[rgba(201,168,76,0.08)] p-6">
-              <p className="text-sm font-medium text-gold">Material para download</p>
-              <a
-                href={attachHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex min-h-[44px] items-center rounded-xl border border-gold bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/20"
-              >
-                Abrir / baixar anexo
-              </a>
-            </div>
-          ) : null}
+          {article.attachment_file_id ? <ArticlePublicAttachment fileId={article.attachment_file_id} /> : null}
         </article>
         <div className="mx-auto mt-12 max-w-3xl border-t border-border pt-8">
-          <Link href="/artigos" className="text-sm text-gold hover:underline">
+          <Link href="/articles" className="text-sm text-gold hover:underline">
             ← Todos os artigos
           </Link>
         </div>

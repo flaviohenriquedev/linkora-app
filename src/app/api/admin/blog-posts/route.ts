@@ -18,7 +18,8 @@ export async function GET() {
     .select(
       "id, title, slug, excerpt, body, image_file_id, attachment_file_id, is_published, published_at, created_at, updated_at",
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

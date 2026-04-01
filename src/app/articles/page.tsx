@@ -11,14 +11,15 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function ArtigosPage() {
+export default async function ArticlesPage() {
   const supabase = await tryCreateClient();
   const { data: rows } = supabase
     ? await supabase
         .from("blog_posts")
-        .select("id, title, slug, excerpt, image_file_id, published_at")
+        .select("id, title, slug, excerpt, image_file_id, created_at")
         .eq("is_published", true)
-        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
     : { data: null };
 
   const articles = rows ?? [];
@@ -39,7 +40,7 @@ export default async function ArtigosPage() {
           {articles.map((a) => (
             <ContentCard
               key={a.id}
-              href={`/artigos/${a.slug}`}
+              href={`/articles/${a.slug}`}
               title={a.title}
               description={a.excerpt}
               imageFileId={a.image_file_id}

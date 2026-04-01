@@ -1,11 +1,20 @@
+import { formatCentsToBrl } from "@/lib/currency";
 import { tryCreateClient } from "@/lib/supabase/server";
-import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals-shared";
+import type {
+  PublicCategory,
+  PublicProfessional,
+  PublicProfessionalDetail,
+  PublicServiceRow,
+} from "@/lib/public-professionals-shared";
 
 type ServiceCategory = { name?: string | null; slug?: string | null } | null;
 type ServiceRow = {
+  id?: string;
   user_id: string;
   title: string | null;
-  categories: ServiceCategory | ServiceCategory[];
+  description?: string | null;
+  price_cents?: number | null;
+  categories: ServiceCategory | ServiceCategory[] | { name: string; slug: string } | null;
 };
 
 type ProfileRow = {
@@ -41,11 +50,11 @@ function hashText(value: string) {
 }
 
 function fakeStars(seed: string) {
-  return (hashText(seed) % 2) + 4; // 4..5
+  return (hashText(seed) % 2) + 4;
 }
 
 function fakeReviews(seed: string) {
-  return (hashText(seed) % 49) + 8; // 8..56
+  return (hashText(seed) % 49) + 8;
 }
 
 function colorFromSeed(seed: string) {
@@ -67,10 +76,19 @@ function normalizeServiceCategories(input: ServiceCategory | ServiceCategory[]):
   return input ? [input] : [];
 }
 
+function priceLabelFromServices(services: ServiceRow[]): string | null {
+  const cents = services
+    .map((s) => s.price_cents)
+    .filter((c): c is number => c != null && Number.isFinite(c) && c >= 0);
+  if (!cents.length) return null;
+  const min = Math.min(...cents);
+  return `A partir de R$ ${formatCentsToBrl(min)}`;
+}
+
 function toPublicProfessional(profile: ProfileRow, services: ServiceRow[]): PublicProfessional {
   const name = profile.full_name?.trim() || "Prestador Linkora";
   const categories = services
-    .flatMap((s) => normalizeServiceCategories(s.categories))
+    .flatMap((s) => normalizeServiceCategories(s.categories as ServiceCategory | ServiceCategory[]))
     .map((c) => ({ name: c?.name?.trim(), slug: c?.slug?.trim() }))
     .filter((c) => Boolean(c.name && c.slug));
 
@@ -89,6 +107,23 @@ function toPublicProfessional(profile: ProfileRow, services: ServiceRow[]): Publ
     color: colorFromSeed(seed),
     stars: fakeStars(seed),
     reviews: fakeReviews(seed),
+    priceLabel: priceLabelFromServices(services),
+  };
+}
+
+function mapToPublicServiceRow(row: ServiceRow): PublicServiceRow {
+  const catRaw = row.categories;
+  const cat =
+    catRaw && !Array.isArray(catRaw) && typeof catRaw === "object" && "name" in catRaw && "slug" in catRaw
+      ? { name: String((catRaw as { name: string }).name), slug: String((catRaw as { slug: string }).slug) }
+      : null;
+
+  return {
+    id: row.id ?? "",
+    title: row.title?.trim() || "Serviço",
+    description: row.description ?? null,
+    price_cents: row.price_cents ?? null,
+    category: cat,
   };
 }
 
@@ -103,7 +138,7 @@ export async function getPublicProfessionalsAndCategories() {
     supabase.from("profiles").select("id, full_name, city, headline").eq("role", "provider"),
     supabase
       .from("provider_services")
-      .select("user_id, title, categories(name, slug)")
+      .select("id, user_id, title, description, price_cents, categories(name, slug)")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
   ]);
@@ -128,7 +163,7 @@ export async function getPublicProfessionalsAndCategories() {
   return { categories, professionals };
 }
 
-export async function getPublicProfessionalById(id: string) {
+export async function getPublicProfessionalById(id: string): Promise<PublicProfessionalDetail | null> {
   const supabase = await tryCreateClient();
   if (!supabase) return null;
 
@@ -143,23 +178,34 @@ export async function getPublicProfessionalById(id: string) {
 
   const { data: servicesRows } = await supabase
     .from("provider_services")
-    .select("user_id, title, categories(name, slug)")
+    .select("id, user_id, title, description, price_cents, categories(name, slug)")
     .eq("user_id", id)
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  return toPublicProfessional(
+  const raw = (servicesRows ?? []) as ServiceRow[];
+  const base = toPublicProfessional(
     {
       id: profile.id as string,
       full_name: profile.full_name as string | null,
       city: profile.city as string | null,
       headline: profile.headline as string | null,
     },
-    (servicesRows ?? []) as ServiceRow[],
+    raw,
   );
+
+  const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
+
+  return { ...base, services };
 }
 
 export async function getPublicProfessionalBySlug(slug: string) {
   const { professionals } = await getPublicProfessionalsAndCategories();
   return professionals.find((p) => p.slug === slug) ?? null;
+}
+
+export async function getPublicProfessionalDetailBySlug(slug: string): Promise<PublicProfessionalDetail | null> {
+  const id = professionalIdFromSlug(slug);
+  if (!id) return null;
+  return getPublicProfessionalById(id);
 }

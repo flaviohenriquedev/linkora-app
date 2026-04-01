@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { getSignedUrlForPublicFile } from "@/lib/public-files";
 import { tryCreateClient } from "@/lib/supabase/server";
-import { publicFileRedirectUrl } from "@/lib/publicFileUrl";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CursoPage({ params }: Props) {
+export default async function CourseSlugPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await tryCreateClient();
   if (!supabase) notFound();
@@ -41,8 +41,10 @@ export default async function CursoPage({ params }: Props) {
 
   if (!course) notFound();
 
-  const heroSrc = course.image_file_id ? publicFileRedirectUrl(course.image_file_id) : null;
-  const attachHref = course.attachment_file_id ? publicFileRedirectUrl(course.attachment_file_id) : null;
+  const [heroSrc, attachHref] = await Promise.all([
+    course.image_file_id ? getSignedUrlForPublicFile(course.image_file_id) : Promise.resolve(null),
+    course.attachment_file_id ? getSignedUrlForPublicFile(course.attachment_file_id) : Promise.resolve(null),
+  ]);
   const ext = course.external_link?.trim();
 
   return (
@@ -114,7 +116,7 @@ export default async function CursoPage({ params }: Props) {
           </aside>
         </div>
         <div className="mx-auto mt-12 max-w-5xl border-t border-border pt-8">
-          <Link href="/cursos" className="text-sm text-gold hover:underline">
+          <Link href="/courses" className="text-sm text-gold hover:underline">
             ← Todos os cursos
           </Link>
         </div>

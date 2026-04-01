@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminAttachmentField } from "@/components/admin/AdminAttachmentField";
+import { AdminCardImageField } from "@/components/admin/AdminCardImageField";
 import { Button } from "@/components/ui/Button";
 
 type Course = {
@@ -13,17 +15,8 @@ type Course = {
   external_link: string | null;
   is_published: boolean;
   sort_order: number;
+  created_at: string;
 };
-
-async function uploadFile(file: File, asImage: boolean) {
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("purpose", asImage ? "product_image" : "document");
-  const res = await fetch("/api/files/upload", { method: "POST", body: fd });
-  const json = (await res.json()) as { file?: { id: string }; error?: string };
-  if (!res.ok) throw new Error(json.error ?? "Falha no upload");
-  return json.file!.id;
-}
 
 export function CoursesManager() {
   const [items, setItems] = useState<Course[]>([]);
@@ -36,16 +29,21 @@ export function CoursesManager() {
   const [attachmentFileId, setAttachmentFileId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Course | null>(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/admin/courses", { cache: "no-store" });
-    const json = (await res.json()) as { courses?: Course[]; error?: string };
-    if (!res.ok) {
-      setError(json.error ?? "Erro ao carregar cursos");
-      return;
+    try {
+      const res = await fetch("/api/admin/courses", { cache: "no-store" });
+      const json = (await res.json()) as { courses?: Course[]; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao carregar cursos");
+        return;
+      }
+      setItems(json.courses ?? []);
+    } finally {
+      setListLoading(false);
     }
-    setItems(json.courses ?? []);
   }
 
   useEffect(() => {
@@ -176,67 +174,38 @@ export function CoursesManager() {
             type="url"
             className="min-h-[44px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
           />
-          <div className="flex flex-wrap gap-4">
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Imagem do card</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      setImageFileId(await uploadFile(f, true));
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
+            <div className="min-w-0">
+              <AdminCardImageField
+                fileId={imageFileId}
+                onFileIdChange={setImageFileId}
+                onError={(msg) => setError(msg)}
               />
-            </label>
-            <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">Arquivo anexado</span>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.zip,application/pdf"
-                className="max-w-full text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  void (async () => {
-                    try {
-                      setAttachmentFileId(await uploadFile(f, false));
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Erro no upload");
-                    }
-                  })();
-                }}
+            </div>
+            <div className="min-w-0">
+              <AdminAttachmentField
+                fileId={attachmentFileId}
+                onFileIdChange={setAttachmentFileId}
+                onError={(msg) => setError(msg)}
               />
+            </div>
+          </div>
+          <div className="flex max-w-md flex-col gap-1">
+            <label htmlFor="course-sort-order" className="text-sm font-medium text-text-primary">
+              Ordem manual (opcional)
             </label>
+            <input
+              id="course-sort-order"
+              type="number"
+              min={0}
+              value={sortOrder}
+              onChange={(e) => setSortOrder(Number(e.target.value))}
+              className="min-h-[44px] max-w-[200px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
+            />
+            <p className="text-xs text-text-muted">
+              A vitrine usa data de cadastro (mais recente primeiro) e id como desempate. Este número fica gravado para uma futura ordenação manual.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {imageFileId ? (
-              <Button type="button" variant="outline" onClick={() => setImageFileId(null)}>
-                Remover imagem
-              </Button>
-            ) : null}
-            {attachmentFileId ? (
-              <Button type="button" variant="outline" onClick={() => setAttachmentFileId(null)}>
-                Remover anexo
-              </Button>
-            ) : null}
-          </div>
-          <input
-            type="number"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(Number(e.target.value))}
-            placeholder="Ordem de exibição"
-            className="min-h-[44px] max-w-[200px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
-          />
           <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
             <input
               type="checkbox"
@@ -268,6 +237,15 @@ export function CoursesManager() {
 
       <div className="rounded-xl border border-border bg-bg-card p-4">
         <h2 className="mb-3 text-lg text-text-primary">Cursos</h2>
+        {listLoading ? (
+          <div className="space-y-2" aria-busy="true" aria-label="Carregando lista">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-14 animate-pulse rounded-lg bg-white/[0.06]" />
+            ))}
+            <p className="pt-2 text-center text-sm text-text-muted">Carregando…</p>
+          </div>
+        ) : null}
+        {!listLoading ? (
         <div className="space-y-2">
           {items.map((item) => (
             <div
@@ -277,7 +255,14 @@ export function CoursesManager() {
               <div>
                 <p className="font-medium text-text-primary">{item.title}</p>
                 <p className="text-xs text-text-muted">
-                  {item.slug} · ordem {item.sort_order}
+                  {item.slug} · cadastro:{" "}
+                  {new Date(item.created_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -297,6 +282,7 @@ export function CoursesManager() {
             <p className="text-sm text-text-muted">Nenhum curso cadastrado.</p>
           ) : null}
         </div>
+        ) : null}
       </div>
     </div>
   );

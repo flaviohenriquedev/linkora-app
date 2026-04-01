@@ -7,7 +7,8 @@ export async function GET() {
     .from("blog_posts")
     .select("id, title, slug, excerpt, image_file_id, is_published, published_at, created_at")
     .eq("is_published", true)
-    .order("published_at", { ascending: false, nullsFirst: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

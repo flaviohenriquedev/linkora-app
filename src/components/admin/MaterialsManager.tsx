@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminAttachmentField } from "@/components/admin/AdminAttachmentField";
 import { Button } from "@/components/ui/Button";
 
 type MaterialRow = {
@@ -9,17 +10,8 @@ type MaterialRow = {
   attachment_file_id: string | null;
   sort_order: number;
   is_published: boolean;
+  created_at: string;
 };
-
-async function uploadDoc(file: File) {
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("purpose", "document");
-  const res = await fetch("/api/files/upload", { method: "POST", body: fd });
-  const json = (await res.json()) as { file?: { id: string }; error?: string };
-  if (!res.ok) throw new Error(json.error ?? "Falha no upload");
-  return json.file!.id;
-}
 
 export function MaterialsManager() {
   const [items, setItems] = useState<MaterialRow[]>([]);
@@ -29,16 +21,21 @@ export function MaterialsManager() {
   const [attachmentFileId, setAttachmentFileId] = useState<string | null>(null);
   const [editing, setEditing] = useState<MaterialRow | null>(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/admin/materials", { cache: "no-store" });
-    const json = (await res.json()) as { materials?: MaterialRow[]; error?: string };
-    if (!res.ok) {
-      setError(json.error ?? "Erro ao carregar materiais");
-      return;
+    try {
+      const res = await fetch("/api/admin/materials", { cache: "no-store" });
+      const json = (await res.json()) as { materials?: MaterialRow[]; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao carregar materiais");
+        return;
+      }
+      setItems(json.materials ?? []);
+    } finally {
+      setListLoading(false);
     }
-    setItems(json.materials ?? []);
   }
 
   useEffect(() => {
@@ -143,43 +140,30 @@ export function MaterialsManager() {
             placeholder="Título"
             className="min-h-[44px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
           />
-          <label className="flex cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-            <span className="font-medium text-text-primary">Arquivo anexado</span>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.zip,application/pdf"
-              className="max-w-full text-sm"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                e.target.value = "";
-                if (!f) return;
-                void (async () => {
-                  try {
-                    setAttachmentFileId(await uploadDoc(f));
-                  } catch (err) {
-                    setError(err instanceof Error ? err.message : "Erro no upload");
-                  }
-                })();
-              }}
-            />
-            {attachmentFileId ? (
-              <span className="text-xs text-green-light">Arquivo definido</span>
-            ) : (
-              <span className="text-xs text-text-muted">Obrigatório para download público</span>
-            )}
-          </label>
-          {attachmentFileId ? (
-            <Button type="button" variant="outline" className="w-fit" onClick={() => setAttachmentFileId(null)}>
-              Remover arquivo
-            </Button>
-          ) : null}
-          <input
-            type="number"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(Number(e.target.value))}
-            placeholder="Ordem"
-            className="min-h-[44px] max-w-[200px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
+          <AdminAttachmentField
+            fileId={attachmentFileId}
+            onFileIdChange={setAttachmentFileId}
+            hintWhenEmpty="Obrigatório para download público · PDF, Office, ZIP…"
+            hintWhenSet="Arquivo definido"
+            removeButtonLabel="Remover arquivo"
+            onError={(msg) => setError(msg)}
           />
+          <div className="flex max-w-md flex-col gap-1">
+            <label htmlFor="material-sort-order" className="text-sm font-medium text-text-primary">
+              Ordem manual (opcional)
+            </label>
+            <input
+              id="material-sort-order"
+              type="number"
+              min={0}
+              value={sortOrder}
+              onChange={(e) => setSortOrder(Number(e.target.value))}
+              className="min-h-[44px] max-w-[200px] rounded-lg border border-border bg-bg-primary px-3 text-text-primary outline-none focus:border-gold"
+            />
+            <p className="text-xs text-text-muted">
+              A vitrine usa data de cadastro (mais recente primeiro) e id como desempate. Este número fica gravado para uso futuro.
+            </p>
+          </div>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
             <input
               type="checkbox"
@@ -211,6 +195,15 @@ export function MaterialsManager() {
 
       <div className="rounded-xl border border-border bg-bg-card p-4">
         <h2 className="mb-3 text-lg text-text-primary">Materiais</h2>
+        {listLoading ? (
+          <div className="space-y-2" aria-busy="true" aria-label="Carregando lista">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-14 animate-pulse rounded-lg bg-white/[0.06]" />
+            ))}
+            <p className="pt-2 text-center text-sm text-text-muted">Carregando…</p>
+          </div>
+        ) : null}
+        {!listLoading ? (
         <div className="space-y-2">
           {items.map((item) => (
             <div
@@ -219,7 +212,16 @@ export function MaterialsManager() {
             >
               <div>
                 <p className="font-medium text-text-primary">{item.title}</p>
-                <p className="text-xs text-text-muted">ordem {item.sort_order}</p>
+                <p className="text-xs text-text-muted">
+                  Cadastro:{" "}
+                  {new Date(item.created_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" onClick={() => void togglePublished(item)}>
@@ -238,6 +240,7 @@ export function MaterialsManager() {
             <p className="text-sm text-text-muted">Nenhum material cadastrado.</p>
           ) : null}
         </div>
+        ) : null}
       </div>
     </div>
   );

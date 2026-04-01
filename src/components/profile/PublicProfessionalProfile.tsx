@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { formatCentsToBrl } from "@/lib/currency";
+import type { PublicProfessionalDetail } from "@/lib/public-professionals-shared";
 
 const TABS = [
   { id: "about", label: "Sobre" },
@@ -12,18 +14,8 @@ const TABS = [
   { id: "reviews", label: "Avaliações" },
 ] as const;
 
-type ProfileProfessional = {
-  name: string;
-  specialty: string;
-  city: string;
-  color: string;
-  initials: string;
-  stars: number;
-  reviews: number;
-};
-
 type Props = {
-  professional: ProfileProfessional;
+  professional: PublicProfessionalDetail;
 };
 
 function stars(n: number) {
@@ -52,6 +44,9 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
                   {p.specialty}
                 </span>
                 <p className="mt-1 text-text-muted">{p.city}</p>
+                {p.priceLabel ? (
+                  <p className="mt-2 text-sm font-medium text-gold">{p.priceLabel}</p>
+                ) : null}
                 <div className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
                   <span className="text-gold">{stars(p.stars)}</span>
                   <span>({p.reviews} avaliações)</span>
@@ -99,13 +94,31 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
 
       {tab === "services" && (
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-bg-card p-6 sm:flex-row sm:items-center">
-            <div>
-              <h3 className="mb-1 text-lg">Serviço principal</h3>
-              <p className="text-sm text-text-secondary">{p.specialty}</p>
-            </div>
-            <span className="font-medium text-gold">Sob consulta</span>
-          </div>
+          {p.services.length === 0 ? (
+            <p className="text-text-muted">Nenhum serviço cadastrado ainda.</p>
+          ) : (
+            p.services.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-bg-card p-6 sm:flex-row sm:items-start"
+              >
+                <div className="min-w-0">
+                  <h3 className="mb-1 text-lg text-text-primary">{s.title}</h3>
+                  {s.category ? (
+                    <span className="mb-2 inline-block text-xs text-green-light">{s.category.name}</span>
+                  ) : null}
+                  {s.description ? (
+                    <p className="mt-1 text-sm text-text-secondary">{s.description}</p>
+                  ) : null}
+                </div>
+                <span className="shrink-0 font-medium text-gold sm:pt-0.5 sm:text-right">
+                  {s.price_cents != null && Number.isFinite(s.price_cents)
+                    ? `R$ ${formatCentsToBrl(s.price_cents)}`
+                    : "Sob consulta"}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -122,9 +135,7 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
         </div>
       )}
 
-      {tab === "reviews" && (
-        <p className="text-text-muted">Avaliações em breve.</p>
-      )}
+      {tab === "reviews" && <p className="text-text-muted">Avaliações em breve.</p>}
     </Container>
   );
 }

@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogoLinkora } from "@/components/brand/LogoLinkora";
+import { HeaderContentNav, HeaderContentNavMobile } from "@/components/layout/HeaderContentNav";
 import { Container } from "@/components/ui/Container";
 import { useAuth } from "@/components/providers/AuthProvider";
 
-const nav = [
+const staticNav = [
   { href: "/", label: "Início" },
   { href: "/professionals", label: "Profissionais" },
-  { href: "/blog", label: "Cursos / Blog" },
   { href: "/ka", label: "IA Ka" },
 ];
 
@@ -105,7 +105,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[100] border-b border-border bg-[rgba(13,31,23,0.92)] pt-[env(safe-area-inset-top)] backdrop-blur-[12px]">
-      <Container className="flex min-h-[56px] items-center justify-between gap-3 py-2 sm:min-h-[64px] sm:py-0 md:min-h-[72px]">
+      <Container className="flex min-h-[56px] items-center justify-between gap-3 py-2 sm:min-h-[64px] sm:py-0 md:min-h-[72px] xl:max-w-[1380px] 2xl:max-w-[1480px]">
         <Link
           href="/"
           className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 font-serif text-lg font-semibold tracking-[0.12em] sm:gap-3 sm:text-xl md:text-2xl md:tracking-[2px]"
@@ -114,9 +114,24 @@ export function Header() {
           <span className="leading-none">LINKORA</span>
         </Link>
 
-        <nav className="hidden lg:block" aria-label="Principal">
-          <ul className="flex gap-6 xl:gap-8">
-            {nav.map((item) => (
+        <nav className="mx-2 hidden min-w-0 shrink lg:mx-3 lg:block xl:mx-4" aria-label="Principal">
+          <ul className="flex flex-nowrap items-center gap-4 xl:gap-6 2xl:gap-8">
+            {staticNav.slice(0, 2).map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`inline-flex min-h-[44px] items-center whitespace-nowrap text-[15px] transition-colors duration-300 ${
+                    isActive(pathname, item.href)
+                      ? "text-gold"
+                      : "text-text-secondary hover:text-gold"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+            <HeaderContentNav />
+            {staticNav.slice(2).map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
@@ -133,28 +148,33 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex xl:gap-4">
-          {!loading && !user ? (
-            <>
+        <div className="hidden shrink-0 items-center gap-2 lg:flex xl:gap-4">
+          <div className="flex min-h-[44px] w-[10rem] items-center justify-end xl:w-[11.5rem] 2xl:w-[12.5rem]">
+            {loading ? (
+              <span
+                className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-white/[0.06]"
+                aria-live="polite"
+                aria-label="Carregando sessão"
+              >
+                <span className="h-2 w-16 animate-pulse rounded-full bg-white/15 2xl:w-20" />
+              </span>
+            ) : !user ? (
               <Link
                 href="/login"
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
+                className="inline-flex min-h-[44px] w-full items-center justify-end whitespace-nowrap px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
               >
                 Login
               </Link>
-            </>
-          ) : null}
-          {!loading && user ? (
-            <>
-              <div className="relative" ref={profileMenuRef}>
+            ) : (
+              <div className="relative min-w-0 w-full" ref={profileMenuRef}>
                 <button
                   type="button"
                   onClick={() => setProfileMenuOpen((s) => !s)}
-                  className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap text-[15px] text-gold"
+                  className="inline-flex min-h-[44px] max-w-full items-center gap-2 whitespace-nowrap text-[15px] text-gold"
                   aria-haspopup="menu"
                   aria-expanded={profileMenuOpen}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
                       <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -162,7 +182,7 @@ export function Header() {
                       initial
                     )}
                   </span>
-                  {displayName}
+                  <span className="truncate">{displayName}</span>
                 </button>
                 {profileMenuOpen ? (
                   <div
@@ -215,13 +235,8 @@ export function Header() {
                   </div>
                 ) : null}
               </div>
-            </>
-          ) : null}
-          {loading ? (
-            <span className="text-[15px] text-text-muted" aria-live="polite">
-              …
-            </span>
-          ) : null}
+            )}
+          </div>
           <Link href="/professionals">
             <span className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-transparent bg-gold px-6 py-2.5 text-[15px] font-medium text-bg-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-br hover:from-gold-light hover:to-gold">
               Encontrar Profissional →
@@ -230,33 +245,38 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1 lg:hidden">
-          {!loading && !user ? (
-            <Link
-              href="/login"
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
-            >
-              Login
-            </Link>
-          ) : user ? (
-            <Link
-              href={me}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-gold"
-              aria-label="Meu perfil"
-            >
-              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
-                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  initial
-                )}
+          <div className="flex min-h-[44px] min-w-[44px] items-center justify-center">
+            {loading ? (
+              <span
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06]"
+                aria-label="Carregando sessão"
+              >
+                <span className="h-4 w-4 animate-pulse rounded-full bg-white/15" />
               </span>
-            </Link>
-          ) : (
-            <span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[15px] text-text-muted" aria-hidden>
-              …
-            </span>
-          )}
+            ) : !user ? (
+              <Link
+                href="/login"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-text-secondary transition-colors hover:text-gold"
+              >
+                Login
+              </Link>
+            ) : (
+              <Link
+                href={me}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2 text-[15px] text-gold"
+                aria-label="Meu perfil"
+              >
+                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[11px] font-bold text-bg-primary">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initial
+                  )}
+                </span>
+              </Link>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -302,7 +322,24 @@ export function Header() {
                   </button>
                 </div>
                 <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Principal">
-                  {nav.map((item) => (
+                  {staticNav.slice(0, 2).map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMenu}
+                      className={`rounded-xl px-4 py-3.5 text-base transition-colors ${
+                        isActive(pathname, item.href)
+                          ? "bg-gold/10 font-medium text-gold"
+                          : "text-text-secondary hover:bg-white/5 hover:text-gold"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <div className="px-1 py-2">
+                    <HeaderContentNavMobile onNavigate={closeMenu} />
+                  </div>
+                  {staticNav.slice(2).map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}

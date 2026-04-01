@@ -9,8 +9,8 @@ export async function GET() {
       "id, title, slug, description, image_file_id, external_link, is_published, sort_order, created_at",
     )
     .eq("is_published", true)
-    .order("sort_order", { ascending: true })
-    .order("title", { ascending: true });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -15,7 +15,7 @@ export async function GET(_request: Request, ctx: Ctx) {
   const supabase = await createClient();
   const { data: fileRow, error } = await supabase
     .from("files")
-    .select("bucket, storage_path")
+    .select("bucket, storage_path, mime_type")
     .eq("id", id)
     .maybeSingle();
 
@@ -31,5 +31,8 @@ export async function GET(_request: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Não foi possível gerar o link" }, { status: 500 });
   }
 
-  return NextResponse.json({ url: signed.signedUrl });
+  return NextResponse.json({
+    url: signed.signedUrl,
+    mimeType: (fileRow.mime_type as string | null) ?? null,
+  });
 }

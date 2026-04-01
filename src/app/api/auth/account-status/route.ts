@@ -23,10 +23,16 @@ export async function POST(request: Request) {
 
     const user = data.users.find((u) => u.email?.toLowerCase() === email);
     if (!user) {
-      return NextResponse.json({ exists: false, oauthOnly: false, roles: [] });
+      return NextResponse.json({ exists: false, oauthOnly: false, hasPassword: false, roles: [] });
     }
 
-    const hasEmailIdentity = user.identities?.some((i) => i.provider === "email") ?? false;
+    const { data: profileRow } = await admin
+      .from("profiles")
+      .select("has_password")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const hasPassword = profileRow?.has_password === true;
 
     const { data: roleRows, error: rolesErr } = await admin
       .from("user_roles")
@@ -43,7 +49,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       exists: true,
-      oauthOnly: !hasEmailIdentity,
+      oauthOnly: !hasPassword,
+      hasPassword,
       roles,
     });
   } catch (e) {

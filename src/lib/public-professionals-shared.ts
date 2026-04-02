@@ -13,6 +13,8 @@ export type PublicProfessional = {
   categorySlugs: string[];
   initials: string;
   color: string;
+  /** Foto do perfil (Storage); null se não houver ou URL não puder ser gerada */
+  avatarUrl: string | null;
   stars: number;
   reviews: number;
   /** Ex.: "A partir de R$ 120,00" quando há preço em algum serviço */

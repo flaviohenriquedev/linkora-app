@@ -43,6 +43,12 @@ export async function GET(request: Request) {
         return res;
     }
 
+    const {data: statusRow} = await supabase.from("profiles").select("is_active").eq("id", user.id).maybeSingle();
+    if (statusRow?.is_active === false) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(new URL("/login?inactive=1", url.origin));
+    }
+
     const {data: rolesBeforeRows} = await supabase.from("user_roles").select("role").eq("user_id", user.id);
     const rolesBefore = rolesBeforeRows ?? [];
     const isFirstGoogleSignup = isGoogleIdentity(user) && rolesBefore.length === 0;

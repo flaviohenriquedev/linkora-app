@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -17,6 +18,8 @@ export type ProfileRow = {
   avatar_file_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Conta desativada: sessão é encerrada no cliente */
+  is_active?: boolean;
 };
 
 type AuthContextValue = {
@@ -37,6 +40,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -97,6 +101,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const p = json.profile;
     if (p && (p.role === "owner" || p.role === "provider")) {
+      if (p.is_active === false) {
+        try {
+          const supabase = createClient();
+          await supabase.auth.signOut();
+          await fetch("/api/auth/sign-out", { method: "POST" });
+        } catch {
+          /* noop */
+        }
+        setUser(null);
+        setProfile(null);
+        setEmail(null);
+        setAvatarUrl(null);
+        setIsAdmin(false);
+        setProfileLoading(false);
+        router.replace("/login?inactive=1");
+        return;
+      }
       setProfile({ ...p });
     } else {
       setProfile(null);
@@ -106,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (json.email) setEmail(json.email);
     setIsAdmin(Boolean(json.isAdmin));
     setProfileLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     void refresh();

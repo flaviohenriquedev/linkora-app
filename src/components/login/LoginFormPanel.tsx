@@ -7,10 +7,15 @@ import { Button } from "@/components/ui/Button";
 import { GoogleLoginButton } from "@/components/login/GoogleLoginButton";
 import { createClient } from "@/lib/supabase/client";
 
+const INACTIVE_LOGIN_MESSAGE =
+    "Não foi possível acessar sua conta no momento. Para reativar o acesso, entre em contato com o suporte.";
+
 type Props = {
     nextPath?: string;
     /** Compat legado do callback OAuth. */
     initialNeedOwnerRegister?: boolean;
+    /** Conta desativada (redirect OAuth ou sessão). */
+    initialInactive?: boolean;
 };
 
 type Role = "business" | "provider";
@@ -27,7 +32,11 @@ type AccountStatus = {
     roles?: ("owner" | "provider")[];
 };
 
-export function LoginFormPanel({ nextPath = "/", initialNeedOwnerRegister = false }: Props) {
+export function LoginFormPanel({
+                                   nextPath = "/",
+                                   initialNeedOwnerRegister = false,
+                                   initialInactive = false,
+                               }: Props) {
     const router = useRouter();
     const [role, setRole] = useState<Role>("provider");
     const [email, setEmail] = useState("");
@@ -60,6 +69,10 @@ export function LoginFormPanel({ nextPath = "/", initialNeedOwnerRegister = fals
         setError("Conta de Empresário ativada para este login.");
         router.replace(cleanLoginHref);
     }, [initialNeedOwnerRegister, router, cleanLoginHref]);
+
+    useEffect(() => {
+        if (initialInactive) setError(INACTIVE_LOGIN_MESSAGE);
+    }, [initialInactive]);
 
     const activateRole = useCallback(async (dbRole: "owner" | "provider"): Promise<ActivateResult> => {
         const supabase = createClient();
@@ -126,6 +139,23 @@ export function LoginFormPanel({ nextPath = "/", initialNeedOwnerRegister = fals
                 setError(isInvalid ? "Credenciais inválidas." : signError.message);
                 setLoading(false);
                 return;
+            }
+
+            const {
+                data: {user: signedUser},
+            } = await supabase.auth.getUser();
+            if (signedUser) {
+                const {data: prof} = await supabase
+                    .from("profiles")
+                    .select("is_active")
+                    .eq("id", signedUser.id)
+                    .maybeSingle();
+                if (prof?.is_active === false) {
+                    await supabase.auth.signOut();
+                    setError(INACTIVE_LOGIN_MESSAGE);
+                    setLoading(false);
+                    return;
+                }
             }
 
             await activateRole(dbRole);
@@ -216,6 +246,22 @@ export function LoginFormPanel({ nextPath = "/", initialNeedOwnerRegister = fals
             setError(pwError.message);
             setLoading(false);
             return;
+        }
+        const {
+            data: { user: uAfter },
+        } = await supabase.auth.getUser();
+        if (uAfter) {
+            const { data: prof } = await supabase
+                .from("profiles")
+                .select("is_active")
+                .eq("id", uAfter.id)
+                .maybeSingle();
+            if (prof?.is_active === false) {
+                await supabase.auth.signOut();
+                setError(INACTIVE_LOGIN_MESSAGE);
+                setLoading(false);
+                return;
+            }
         }
         try {
             await activateRole(roleToDb(role));

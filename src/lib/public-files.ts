@@ -68,3 +68,47 @@ export async function getSignedUrlForPublicFile(
   if (signErr || !signed?.signedUrl) return null;
   return signed.signedUrl;
 }
+
+/**
+ * URL assinada do avatar de um prestador ativo (listagens públicas).
+ * Exige service role: RLS não expõe `files` de avatar para anônimos.
+ */
+export async function getSignedUrlForPublicProviderAvatar(
+  fileId: string | null | undefined,
+  expiresSec = 3600,
+): Promise<string | null> {
+  if (!fileId?.trim()) return null;
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return null;
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("avatar_file_id", fileId)
+    .eq("role", "provider")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!profile) return null;
+
+  const { data: fileRow, error: fileErr } = await admin
+    .from("files")
+    .select("bucket, storage_path")
+    .eq("id", fileId)
+    .maybeSingle();
+
+  if (fileErr || !fileRow?.storage_path) return null;
+
+  const bucket = (fileRow.bucket as string) || "linkora-files";
+  const { data: signed, error: signErr } = await admin.storage
+    .from(bucket)
+    .createSignedUrl(fileRow.storage_path as string, expiresSec);
+
+  if (signErr || !signed?.signedUrl) return null;
+  return signed.signedUrl;
+}

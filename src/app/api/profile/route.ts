@@ -31,7 +31,7 @@ export async function GET() {
 
   let { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
+    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -43,7 +43,7 @@ export async function GET() {
     await syncOAuthAvatarIfMissing(supabase, user);
     const { data: again } = await supabase
       .from("profiles")
-      .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
+      .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
       .eq("id", user.id)
       .maybeSingle();
     if (again) profile = again;
@@ -139,7 +139,7 @@ export async function PATCH(request: Request) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .upsert({ id: user.id, ...patch }, { onConflict: "id" })
-    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at")
+    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
     .maybeSingle();
 
   if (error || !profile) {

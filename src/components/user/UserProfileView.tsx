@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { AccountDangerZone } from "@/components/profile/AccountDangerZone";
 import { useAuth } from "@/components/providers/AuthProvider";
 
 const TABS = [
@@ -220,6 +221,8 @@ export function UserProfileView() {
           </div>
         </div>
       )}
+
+      <AccountDangerZone />
     </Container>
   );
 }

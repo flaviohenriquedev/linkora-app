@@ -9,6 +9,7 @@ import {
   CategoryAutocomplete,
   type CategoryOption,
 } from "@/components/profile/CategoryAutocomplete";
+import { AccountDangerZone } from "@/components/profile/AccountDangerZone";
 import { formatCentsToBrl, maskBrlFromDigits, parseBrlToCents } from "@/lib/currency";
 
 const TABS = [
@@ -696,6 +697,8 @@ export function ProfessionalProfile() {
       {tab === "reviews" && (
         <p className="text-text-muted">Avaliações aparecerão aqui quando a área estiver conectada.</p>
       )}
+
+      <AccountDangerZone />
     </Container>
   );
 }

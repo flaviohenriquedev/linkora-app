@@ -1,4 +1,5 @@
 import { formatCentsToBrl } from "@/lib/currency";
+import { getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
 import { tryCreateClient } from "@/lib/supabase/server";
 import type {
   PublicCategory,
@@ -22,6 +23,7 @@ type ProfileRow = {
   full_name: string | null;
   city: string | null;
   headline: string | null;
+  avatar_file_id: string | null;
 };
 
 function slugify(text: string) {
@@ -105,6 +107,7 @@ function toPublicProfessional(profile: ProfileRow, services: ServiceRow[]): Publ
     categorySlugs: uniqueCategorySlugs,
     initials: initialsFromName(name),
     color: colorFromSeed(seed),
+    avatarUrl: null,
     stars: fakeStars(seed),
     reviews: fakeReviews(seed),
     priceLabel: priceLabelFromServices(services),
@@ -135,7 +138,11 @@ export async function getPublicProfessionalsAndCategories() {
 
   const [{ data: categoriesRows }, { data: profilesRows }, { data: servicesRows }] = await Promise.all([
     supabase.from("categories").select("id, name, slug").eq("is_active", true).order("name", { ascending: true }),
-    supabase.from("profiles").select("id, full_name, city, headline").eq("role", "provider"),
+    supabase
+      .from("profiles")
+      .select("id, full_name, city, headline, avatar_file_id")
+      .eq("role", "provider")
+      .eq("is_active", true),
     supabase
       .from("provider_services")
       .select("id, user_id, title, description, price_cents, categories(name, slug)")
@@ -156,9 +163,16 @@ export async function getPublicProfessionalsAndCategories() {
     servicesByUser.set(row.user_id, list);
   }
 
-  const professionals = ((profilesRows ?? []) as ProfileRow[])
-    .map((p) => toPublicProfessional(p, servicesByUser.get(p.id) ?? []))
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const profileRows = (profilesRows ?? []) as ProfileRow[];
+  const professionals = (
+    await Promise.all(
+      profileRows.map(async (p) => {
+        const base = toPublicProfessional(p, servicesByUser.get(p.id) ?? []);
+        const avatarUrl = await getSignedUrlForPublicProviderAvatar(p.avatar_file_id);
+        return { ...base, avatarUrl };
+      }),
+    )
+  ).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   return { categories, professionals };
 }
@@ -169,9 +183,10 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, city, headline, role")
+    .select("id, full_name, city, headline, role, avatar_file_id")
     .eq("id", id)
     .eq("role", "provider")
+    .eq("is_active", true)
     .maybeSingle();
 
   if (!profile) return null;
@@ -190,13 +205,16 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
       full_name: profile.full_name as string | null,
       city: profile.city as string | null,
       headline: profile.headline as string | null,
+      avatar_file_id: (profile.avatar_file_id as string | null) ?? null,
     },
     raw,
   );
 
+  const avatarUrl = await getSignedUrlForPublicProviderAvatar(profile.avatar_file_id as string | null);
+
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
-  return { ...base, services };
+  return { ...base, avatarUrl, services };
 }
 
 export async function getPublicProfessionalBySlug(slug: string) {

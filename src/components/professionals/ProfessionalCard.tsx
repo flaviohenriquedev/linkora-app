@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {Button} from "@/components/ui/Button";
+import {presenceAvatarRingClass} from "@/lib/presence-avatar";
 import {professionalPath, type PublicProfessional} from "@/lib/public-professionals-shared";
 
 type Props = {
@@ -22,7 +23,7 @@ export function ProfessionalCard({professional: p}: Props) {
             className="flex min-w-0 cursor-pointer flex-col rounded-2xl border border-border bg-bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gold">
             <Link href={profilePath} className="group mb-4 flex items-center gap-4">
                 <div
-                    className="flex h-14 w-14 shrink-0 overflow-hidden rounded-full font-serif text-2xl font-semibold text-white transition-transform group-hover:scale-105"
+                    className={`flex h-14 w-14 shrink-0 overflow-hidden rounded-full font-serif text-2xl font-semibold text-white transition-transform group-hover:scale-105 ${presenceAvatarRingClass(p.presence)}`}
                     style={p.avatarUrl ? undefined : {backgroundColor: p.color}}
                 >
                     {p.avatarUrl ? (
@@ -60,7 +61,7 @@ export function ProfessionalCard({professional: p}: Props) {
                         Ver Perfil
                     </Button>
                 </Link>
-                <Link href="/chat" className="min-w-0 flex-1">
+                <Link href={`/chat?peer=${p.id}`} className="min-w-0 flex-1">
                     <Button variant="green" className="w-full px-3 py-2.5 text-sm sm:px-4 sm:text-[15px]">
                         Chat
                     </Button>

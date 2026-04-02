@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { ProfessionalCard } from "@/components/professionals/ProfessionalCard";
+import { useAuth } from "@/components/providers/AuthProvider";
 import type { PublicCategory, PublicProfessional } from "@/lib/public-professionals-shared";
 
 type Props = {
@@ -11,6 +12,44 @@ type Props = {
 };
 
 export function ProfessionalsExplorer({ categories, professionals }: Props) {
+  const { user } = useAuth();
+  const [presenceMap, setPresenceMap] = useState<
+    Record<string, NonNullable<PublicProfessional["presence"]>>
+  >({});
+
+  const professionalIdsKey = useMemo(
+    () => [...new Set(professionals.map((p) => p.id))].sort().join(","),
+    [professionals],
+  );
+
+  useEffect(() => {
+    if (!user?.id || !professionalIdsKey) {
+      setPresenceMap({});
+      return;
+    }
+    const ids = professionalIdsKey;
+    let cancelled = false;
+    void fetch(`/api/presence/providers?ids=${encodeURIComponent(ids)}`, { cache: "no-store" })
+      .then((r) => r.json() as Promise<{ presence?: Record<string, string> }>)
+      .then((j) => {
+        if (cancelled) return;
+        const raw = j.presence ?? {};
+        const next: Record<string, NonNullable<PublicProfessional["presence"]>> = {};
+        for (const p of professionals) {
+          const v = raw[p.id];
+          next[p.id] =
+            v === "online" || v === "away" || v === "offline" ? v : "offline";
+        }
+        setPresenceMap(next);
+      })
+      .catch(() => {
+        if (!cancelled) setPresenceMap({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, professionalIdsKey, professionals]);
+
   const [filter, setFilter] = useState<"all" | string>("all");
   const [query, setQuery] = useState("");
 
@@ -39,7 +78,7 @@ export function ProfessionalsExplorer({ categories, professionals }: Props) {
             className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-text-primary outline-none placeholder:text-text-muted"
           />
         </div>
-        <div className="-mx-1 flex max-w-full flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-1 pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
+        <div className="-mx-1 flex max-w-full flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-1 pb-1 [-webkit-overflow-scrolling:touch]">
           <button
             type="button"
             onClick={() => setFilter("all")}
@@ -69,7 +108,14 @@ export function ProfessionalsExplorer({ categories, professionals }: Props) {
       </div>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
         {filtered.map((p) => (
-          <ProfessionalCard key={p.id} professional={p} />
+          <ProfessionalCard
+            key={p.id}
+            professional={{
+              ...p,
+              // Fallback para "offline" para sempre exibir a borda de status no avatar.
+              presence: presenceMap[p.id] ?? "offline",
+            }}
+          />
         ))}
       </div>
       {!filtered.length ? (

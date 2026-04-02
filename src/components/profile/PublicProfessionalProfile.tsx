@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { formatCentsToBrl } from "@/lib/currency";
+import { presenceAvatarRingClass, type PresenceStatus } from "@/lib/presence-avatar";
 import type { PublicProfessionalDetail } from "@/lib/public-professionals-shared";
 
 const TABS = [
@@ -23,7 +25,35 @@ function stars(n: number) {
 }
 
 export function PublicProfessionalProfile({ professional: p }: Props) {
+  const { user } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("about");
+  const [presence, setPresence] = useState<PresenceStatus>("offline");
+
+  useEffect(() => {
+    if (!user?.id) {
+      setPresence("offline");
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      void fetch(`/api/presence/providers?ids=${encodeURIComponent(p.id)}`, { cache: "no-store" })
+        .then((r) => r.json() as Promise<{ presence?: Record<string, string> }>)
+        .then((j) => {
+          if (cancelled) return;
+          const v = j.presence?.[p.id];
+          setPresence(v === "online" || v === "away" || v === "offline" ? v : "offline");
+        })
+        .catch(() => {
+          if (!cancelled) setPresence("offline");
+        });
+    };
+    load();
+    const id = setInterval(load, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [user?.id, p.id]);
 
   return (
     <Container className="py-10">
@@ -31,7 +61,7 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
         <div className="h-[120px] bg-gradient-to-r from-bg-secondary to-green-main" />
         <div className="relative flex flex-wrap items-end gap-6 px-8 pb-8">
           <div
-            className="-mt-12 flex h-[100px] w-[100px] shrink-0 overflow-hidden rounded-full border-4 border-bg-card font-serif text-4xl font-semibold text-white"
+            className={`-mt-12 flex h-[100px] w-[100px] shrink-0 overflow-hidden rounded-full border-4 border-bg-card font-serif text-4xl font-semibold text-white ${presenceAvatarRingClass(presence)}`}
             style={p.avatarUrl ? undefined : { backgroundColor: p.color }}
           >
             {p.avatarUrl ? (
@@ -60,7 +90,7 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
                 <Link href="/schedule">
                   <Button variant="green">Agendar</Button>
                 </Link>
-                <Link href="/chat">
+                <Link href={`/chat?peer=${p.id}`}>
                   <Button variant="outline">Chat</Button>
                 </Link>
               </div>
@@ -89,10 +119,39 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
       {tab === "about" && (
         <div>
           <h2 className="mb-4 text-xl">Sobre</h2>
-          <p className="max-w-3xl text-text-secondary">
-            Profissional com foco em {p.specialty.toLowerCase()} e experiência em projetos de moda.
-            Perfil público para contato e contratação.
-          </p>
+          {p.bio?.trim() ? <p className="max-w-3xl whitespace-pre-line text-text-secondary">{p.bio}</p> : null}
+          <div className="mt-6">
+            <h3 className="mb-2 text-lg text-text-primary">Contatos</h3>
+            {p.contacts.length ? (
+              <ul className="space-y-2 text-sm text-text-secondary">
+                {p.contacts.map((c) => (
+                  <li key={c.id} className="rounded-lg border border-border bg-bg-card px-3 py-2">
+                    <span className="text-text-muted">{c.label?.trim() || c.type}: </span>
+                    {c.type === "email" ? (
+                      <a className="text-gold hover:underline" href={`mailto:${c.value}`}>
+                        {c.value}
+                      </a>
+                    ) : c.type === "whatsapp" ? (
+                      <a
+                        className="text-gold hover:underline"
+                        href={`https://wa.me/${c.value.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {c.value}
+                      </a>
+                    ) : (
+                      <a className="text-gold hover:underline" href={`tel:${c.value.replace(/\s+/g, "")}`}>
+                        {c.value}
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-text-muted">Prestador não informou contatos públicos.</p>
+            )}
+          </div>
         </div>
       )}
 

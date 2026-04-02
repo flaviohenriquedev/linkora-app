@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getSupabaseSessionUser } from "@/lib/supabase/middleware";
 
-const protectedPrefixes = ["/profile", "/user-profile", "/owner", "/admin"];
+const protectedPrefixes = ["/profile", "/user-profile", "/owner", "/admin", "/chat"];
 
 export async function middleware(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
     if (!needsAuth || user) return response;
 
     const login = new URL("/login", request.url);
-    login.searchParams.set("next", pathname);
+    login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(login);
   } catch (e) {
     console.error("[middleware]", e);

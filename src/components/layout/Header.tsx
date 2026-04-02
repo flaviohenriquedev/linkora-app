@@ -8,6 +8,7 @@ import {LogoLinkora} from "@/components/brand/LogoLinkora";
 import {HeaderContentNav, HeaderContentNavMobile} from "@/components/layout/HeaderContentNav";
 import {Container} from "@/components/ui/Container";
 import {useAuth} from "@/components/providers/AuthProvider";
+import {NotificationBell} from "@/components/layout/NotificationBell";
 
 const staticNav = [
     {href: "/", label: "Início"},
@@ -48,6 +49,33 @@ function abbreviatedName(name: string | undefined, email: string | null | undefi
     const last = parts[parts.length - 1]!;
     const middle = parts.slice(1, -1).map((p) => `${p[0]?.toUpperCase()}.`);
     return [first, ...middle, last].join(" ");
+}
+
+function IconMessages({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+    return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+    );
+}
+
+function IconSelfNotes({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+        >
+            <path d="M9 11 3 17a2.828 2.828 0 1 0 4 4l6-6" />
+            <path d="m15 5 7-7" />
+            <path d="M3 21h4l11-11" />
+        </svg>
+    );
 }
 
 export function Header() {
@@ -157,9 +185,10 @@ export function Header() {
                     </ul>
                 </nav>
 
-                <div className="hidden shrink-0 items-center gap-2 lg:flex xl:gap-4">
+                <div className="flex shrink-0 items-center gap-2 xl:gap-4">
+                    <NotificationBell/>
                     <div
-                        className="flex min-h-[44px] w-[10rem] items-center justify-end xl:w-[11.5rem] 2xl:w-[12.5rem]">
+                        className="hidden min-h-[44px] w-[10rem] items-center justify-end lg:flex xl:w-[11.5rem] 2xl:w-[12.5rem]">
                         {loading ? (
                             <span
                                 className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-white/[0.06]"
@@ -221,6 +250,24 @@ export function Header() {
                                             </svg>
                                             Meu Perfil
                                         </Link>
+                                        <Link
+                                            href="/chat"
+                                            role="menuitem"
+                                            onClick={() => setProfileMenuOpen(false)}
+                                            className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-bg-primary"
+                                        >
+                                            <IconMessages />
+                                            Mensagens
+                                        </Link>
+                                        <Link
+                                            href="/chat?self=1"
+                                            role="menuitem"
+                                            onClick={() => setProfileMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-bg-primary"
+                                        >
+                                            <IconSelfNotes />
+                                            Notas para mim
+                                        </Link>
                                         {isAdmin ? (
                                             <Link
                                                 href="/admin"
@@ -259,7 +306,7 @@ export function Header() {
                             </div>
                         )}
                     </div>
-                    <Link href="/professionals">
+                    <Link href="/professionals" className="hidden lg:inline-flex">
             <span
                 className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-transparent bg-gold px-6 py-2.5 text-[15px] font-medium text-bg-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-br hover:from-gold-light hover:to-gold">
               Encontrar Profissional →
@@ -414,6 +461,22 @@ export function Header() {
                           )}
                         </span>
                                             {displayName}
+                                        </Link>
+                                        <Link
+                                            href="/chat"
+                                            onClick={closeMenu}
+                                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-text-primary transition-colors hover:bg-white/5 hover:text-gold"
+                                        >
+                                            <IconMessages className="h-4 w-4 shrink-0" />
+                                            Mensagens
+                                        </Link>
+                                        <Link
+                                            href="/chat?self=1"
+                                            onClick={closeMenu}
+                                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-text-primary transition-colors hover:bg-white/5 hover:text-gold"
+                                        >
+                                            <IconSelfNotes className="h-4 w-4 shrink-0" />
+                                            Notas para mim
                                         </Link>
                                         {isAdmin ? (
                                             <Link

@@ -3,6 +3,7 @@ import { getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
 import { tryCreateClient } from "@/lib/supabase/server";
 import type {
   PublicCategory,
+  PublicProviderContact,
   PublicProfessional,
   PublicProfessionalDetail,
   PublicServiceRow,
@@ -23,7 +24,16 @@ type ProfileRow = {
   full_name: string | null;
   city: string | null;
   headline: string | null;
+  bio: string | null;
   avatar_file_id: string | null;
+};
+
+type ProviderContactRow = {
+  id: string;
+  type: "email" | "phone" | "whatsapp";
+  label: string | null;
+  value: string;
+  sort_order: number;
 };
 
 function slugify(text: string) {
@@ -140,7 +150,7 @@ export async function getPublicProfessionalsAndCategories() {
     supabase.from("categories").select("id, name, slug").eq("is_active", true).order("name", { ascending: true }),
     supabase
       .from("profiles")
-      .select("id, full_name, city, headline, avatar_file_id")
+      .select("id, full_name, city, headline, bio, avatar_file_id")
       .eq("role", "provider")
       .eq("is_active", true),
     supabase
@@ -183,13 +193,21 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, city, headline, role, avatar_file_id")
+    .select("id, full_name, city, headline, bio, role, avatar_file_id")
     .eq("id", id)
     .eq("role", "provider")
     .eq("is_active", true)
     .maybeSingle();
 
   if (!profile) return null;
+
+  const { data: contactsRows } = await supabase
+    .from("provider_contacts")
+    .select("id, type, label, value, sort_order")
+    .eq("provider_id", id)
+    .eq("is_public", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const { data: servicesRows } = await supabase
     .from("provider_services")
@@ -205,6 +223,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
       full_name: profile.full_name as string | null,
       city: profile.city as string | null,
       headline: profile.headline as string | null,
+      bio: profile.bio as string | null,
       avatar_file_id: (profile.avatar_file_id as string | null) ?? null,
     },
     raw,
@@ -212,9 +231,16 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const avatarUrl = await getSignedUrlForPublicProviderAvatar(profile.avatar_file_id as string | null);
 
+  const contacts: PublicProviderContact[] = ((contactsRows ?? []) as ProviderContactRow[]).map((c) => ({
+    id: c.id,
+    type: c.type,
+    label: c.label,
+    value: c.value,
+  }));
+
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
-  return { ...base, avatarUrl, services };
+  return { ...base, avatarUrl, bio: (profile.bio as string | null) ?? null, contacts, services };
 }
 
 export async function getPublicProfessionalBySlug(slug: string) {

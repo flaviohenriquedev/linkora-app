@@ -10,6 +10,7 @@ import {
   type CategoryOption,
 } from "@/components/profile/CategoryAutocomplete";
 import { AccountDangerZone } from "@/components/profile/AccountDangerZone";
+import { FormSelect } from "@/components/ui/FormSelect";
 import { formatCentsToBrl, maskBrlFromDigits, parseBrlToCents } from "@/lib/currency";
 
 const TABS = [
@@ -28,6 +29,15 @@ type ProviderServiceRow = {
   sort_order: number;
   is_active: boolean;
   category: { id: string; name: string; slug: string } | null;
+};
+
+type ProviderContactRow = {
+  id: string;
+  type: "email" | "phone" | "whatsapp";
+  label: string | null;
+  value: string;
+  is_public: boolean;
+  sort_order: number;
 };
 
 function initials(name: string) {
@@ -53,6 +63,13 @@ export function ProfessionalProfile() {
   const [newDesc, setNewDesc] = useState("");
   const [newPriceMasked, setNewPriceMasked] = useState("");
   const [serviceBusy, setServiceBusy] = useState(false);
+  const [contacts, setContacts] = useState<ProviderContactRow[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactBusy, setContactBusy] = useState(false);
+  const [newContactType, setNewContactType] = useState<ProviderContactRow["type"]>("whatsapp");
+  const [newContactLabel, setNewContactLabel] = useState("");
+  const [newContactValue, setNewContactValue] = useState("");
+  const [newContactPublic, setNewContactPublic] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
@@ -95,10 +112,24 @@ export function ProfessionalProfile() {
     }
   }, []);
 
+  const loadContacts = useCallback(async () => {
+    setContactsLoading(true);
+    try {
+      const res = await fetch("/api/profile/contacts", { cache: "no-store" });
+      const d = (await res.json()) as { contacts?: ProviderContactRow[] };
+      setContacts(d.contacts ?? []);
+    } catch {
+      setContacts([]);
+    } finally {
+      setContactsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!profile) return;
     void loadServices();
-  }, [profile, loadServices]);
+    void loadContacts();
+  }, [profile, loadServices, loadContacts]);
 
   useEffect(() => {
     setLocalAvatarUrl(avatarUrl);
@@ -169,6 +200,42 @@ export function ProfessionalProfile() {
       if (editingId === id) setEditingId(null);
     } finally {
       setServiceBusy(false);
+    }
+  }
+
+  async function addContact() {
+    if (!newContactValue.trim()) return;
+    setContactBusy(true);
+    try {
+      const res = await fetch("/api/profile/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: newContactType,
+          label: newContactLabel.trim() || null,
+          value: newContactValue.trim(),
+          is_public: newContactPublic,
+          sort_order: contacts.length,
+        }),
+      });
+      if (!res.ok) return;
+      setNewContactLabel("");
+      setNewContactValue("");
+      setNewContactPublic(true);
+      setNewContactType("whatsapp");
+      await loadContacts();
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
+  async function removeContact(id: string) {
+    setContactBusy(true);
+    try {
+      await fetch(`/api/profile/contacts/${id}`, { method: "DELETE" });
+      await loadContacts();
+    } finally {
+      setContactBusy(false);
     }
   }
 
@@ -493,15 +560,110 @@ export function ProfessionalProfile() {
       </div>
 
       {tab === "about" && (
-        <div className="rounded-xl border border-border bg-bg-card/50 p-4 sm:p-6">
-          <h2 className="mb-3 text-lg font-medium text-text-primary">Sobre mim</h2>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={8}
-            className="w-full max-w-3xl rounded-lg border border-border bg-bg-primary px-4 py-3 text-sm leading-relaxed text-text-secondary outline-none transition focus:border-gold focus:ring-1 focus:ring-gold/20"
-            placeholder="Conte sua experiência, estilo de trabalho e diferenciais."
-          />
+        <div className="space-y-6">
+          <div className="rounded-xl border border-border bg-bg-card/50 p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-medium text-text-primary">Sobre mim</h2>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={8}
+              className="w-full max-w-3xl rounded-lg border border-border bg-bg-primary px-4 py-3 text-sm leading-relaxed text-text-secondary outline-none transition focus:border-gold focus:ring-1 focus:ring-gold/20"
+              placeholder="Conte sua experiência, estilo de trabalho e diferenciais."
+            />
+          </div>
+
+          <div className="rounded-xl border border-border bg-bg-card/50 p-4 sm:p-6">
+            <h3 className="mb-3 text-lg font-medium text-text-primary">Contatos</h3>
+            <p className="mb-4 text-sm text-text-secondary">
+              Adicione e-mails, telefones e WhatsApp para aparecer na sua página pública.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormSelect
+                id="new-contact-type"
+                label="Tipo"
+                value={newContactType}
+                onChange={(e) => setNewContactType(e.target.value as ProviderContactRow["type"])}
+                className="min-w-0"
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="phone">Telefone</option>
+                <option value="email">E-mail</option>
+              </FormSelect>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-muted">Rótulo (opcional)</label>
+                <input
+                  value={newContactLabel}
+                  onChange={(e) => setNewContactLabel(e.target.value)}
+                  placeholder="Ex.: Comercial"
+                  className="min-h-[44px] w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-muted">Contato</label>
+                <input
+                  value={newContactValue}
+                  onChange={(e) => setNewContactValue(e.target.value)}
+                  placeholder={
+                    newContactType === "email"
+                      ? "contato@empresa.com"
+                      : newContactType === "whatsapp"
+                        ? "(11) 99999-9999"
+                        : "(11) 3333-3333"
+                  }
+                  className="min-h-[44px] w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+              <label className="inline-flex min-h-[44px] items-center gap-2 text-sm text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={newContactPublic}
+                  onChange={(e) => setNewContactPublic(e.target.checked)}
+                />
+                Público
+              </label>
+            </div>
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px]"
+                disabled={contactBusy || !newContactValue.trim()}
+                onClick={() => void addContact()}
+              >
+                {contactBusy ? "Salvando..." : "Adicionar contato"}
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {contactsLoading ? <p className="text-sm text-text-muted">Carregando contatos...</p> : null}
+              {!contactsLoading && contacts.length === 0 ? (
+                <p className="text-sm text-text-muted">Nenhum contato cadastrado.</p>
+              ) : null}
+              {contacts.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex flex-col gap-2 rounded-lg border border-border bg-bg-primary px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-text-primary">
+                      {(c.label?.trim() || c.type).toUpperCase()} - {c.value}
+                    </p>
+                    <p className="text-xs text-text-muted">{c.is_public ? "Público" : "Privado"}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="self-start rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted transition hover:text-red-400 sm:self-auto"
+                    onClick={() => void removeContact(c.id)}
+                    disabled={contactBusy}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

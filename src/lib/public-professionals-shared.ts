@@ -19,6 +19,8 @@ export type PublicProfessional = {
   reviews: number;
   /** Ex.: "A partir de R$ 120,00" quando há preço em algum serviço */
   priceLabel: string | null;
+  /** Preenchido no cliente quando o utilizador está autenticado (API de presença) */
+  presence?: "online" | "away" | "offline";
 };
 
 export type PublicServiceRow = {
@@ -29,7 +31,16 @@ export type PublicServiceRow = {
   category: { name: string; slug: string } | null;
 };
 
+export type PublicProviderContact = {
+  id: string;
+  type: "email" | "phone" | "whatsapp";
+  label: string | null;
+  value: string;
+};
+
 export type PublicProfessionalDetail = PublicProfessional & {
+  bio: string | null;
+  contacts: PublicProviderContact[];
   services: PublicServiceRow[];
 };
 

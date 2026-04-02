@@ -165,6 +165,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAvatarUrl(null);
     setIsAdmin(false);
     setProfileLoading(false);
+
+    // Atualiza presença imediatamente antes do logout (evita "online" ficar preso).
+    try {
+      void fetch("/api/chat/presence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "offline" }),
+        keepalive: true,
+      });
+    } catch {
+      // noop
+    }
+
     await supabase.auth.signOut();
     try {
       await fetch("/api/auth/sign-out", { method: "POST" });

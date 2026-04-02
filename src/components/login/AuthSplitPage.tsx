@@ -16,7 +16,7 @@ export function AuthSplitPage({ children }: Props) {
         <LoginBrandPanel />
       </div>
       {/* Sem flex-col aqui: evita flex-shrink no filho e esconder parte do formulário */}
-      <div className="min-h-0 flex-1 basis-0 overflow-x-hidden overflow-y-auto overscroll-y-contain lg:max-h-full lg:[scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]">
+      <div className="min-h-0 flex-1 basis-0 overflow-x-hidden overflow-y-auto overscroll-y-contain lg:relative lg:z-10 lg:max-h-full lg:border-l lg:border-white/10 lg:bg-bg-primary/75 lg:shadow-[-14px_0_28px_rgba(0,0,0,0.22)] lg:[scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]">
         <AuthMobileTopBar />
         {children}
       </div>

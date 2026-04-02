@@ -23,6 +23,7 @@ type ProfileRow = {
   full_name: string | null;
   city: string | null;
   headline: string | null;
+  bio: string | null;
   avatar_file_id: string | null;
 };
 
@@ -140,7 +141,7 @@ export async function getPublicProfessionalsAndCategories() {
     supabase.from("categories").select("id, name, slug").eq("is_active", true).order("name", { ascending: true }),
     supabase
       .from("profiles")
-      .select("id, full_name, city, headline, avatar_file_id")
+      .select("id, full_name, city, headline, bio, avatar_file_id")
       .eq("role", "provider")
       .eq("is_active", true),
     supabase
@@ -183,7 +184,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, city, headline, role, avatar_file_id")
+    .select("id, full_name, city, headline, bio, role, avatar_file_id")
     .eq("id", id)
     .eq("role", "provider")
     .eq("is_active", true)
@@ -205,6 +206,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
       full_name: profile.full_name as string | null,
       city: profile.city as string | null,
       headline: profile.headline as string | null,
+      bio: (profile.bio as string | null) ?? null,
       avatar_file_id: (profile.avatar_file_id as string | null) ?? null,
     },
     raw,
@@ -214,7 +216,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
-  return { ...base, avatarUrl, services };
+  return { ...base, avatarUrl, bio: (profile.bio as string | null) ?? null, services };
 }
 
 export async function getPublicProfessionalBySlug(slug: string) {

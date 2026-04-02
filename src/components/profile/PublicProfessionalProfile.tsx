@@ -89,10 +89,7 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
       {tab === "about" && (
         <div>
           <h2 className="mb-4 text-xl">Sobre</h2>
-          <p className="max-w-3xl text-text-secondary">
-            Profissional com foco em {p.specialty.toLowerCase()} e experiência em projetos de moda.
-            Perfil público para contato e contratação.
-          </p>
+          {p.bio?.trim() ? <p className="max-w-3xl whitespace-pre-line text-text-secondary">{p.bio}</p> : null}
         </div>
       )}
 

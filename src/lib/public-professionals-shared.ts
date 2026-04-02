@@ -30,6 +30,7 @@ export type PublicServiceRow = {
 };
 
 export type PublicProfessionalDetail = PublicProfessional & {
+  bio: string | null;
   services: PublicServiceRow[];
 };
 

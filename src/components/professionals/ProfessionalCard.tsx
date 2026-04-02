@@ -23,18 +23,22 @@ export function ProfessionalCard({professional: p}: Props) {
             className="flex min-w-0 cursor-pointer flex-col rounded-2xl border border-border bg-bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gold">
             <Link href={profilePath} className="group mb-4 flex items-center gap-4">
                 <div
-                    className={`flex h-14 w-14 shrink-0 overflow-hidden rounded-full font-serif text-2xl font-semibold text-white transition-transform group-hover:scale-105 ${presenceAvatarRingClass(p.presence)}`}
-                    style={p.avatarUrl ? undefined : {backgroundColor: p.color}}
+                    className={`shrink-0 rounded-full transition-transform group-hover:scale-105 ${presenceAvatarRingClass(p.presence)}`}
                 >
-                    {p.avatarUrl ? (
-                        <img
-                            src={p.avatarUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                        />
-                    ) : (
-                        <span className="flex h-full w-full items-center justify-center">{p.initials}</span>
-                    )}
+                    <div
+                        className="flex h-14 w-14 overflow-hidden rounded-full font-serif text-2xl font-semibold text-white"
+                        style={p.avatarUrl ? undefined : {backgroundColor: p.color}}
+                    >
+                        {p.avatarUrl ? (
+                            <img
+                                src={p.avatarUrl}
+                                alt=""
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <span className="flex h-full w-full items-center justify-center">{p.initials}</span>
+                        )}
+                    </div>
                 </div>
                 <div>
                     <h3 className="mb-1 font-sans text-lg group-hover:text-gold">{p.name}</h3>

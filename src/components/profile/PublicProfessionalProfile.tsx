@@ -61,14 +61,18 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
         <div className="h-[120px] bg-gradient-to-r from-bg-secondary to-green-main" />
         <div className="relative flex flex-wrap items-end gap-6 px-8 pb-8">
           <div
-            className={`-mt-12 flex h-[100px] w-[100px] shrink-0 overflow-hidden rounded-full border-4 border-bg-card font-serif text-4xl font-semibold text-white ${presenceAvatarRingClass(presence)}`}
-            style={p.avatarUrl ? undefined : { backgroundColor: p.color }}
+            className={`-mt-12 shrink-0 rounded-full border-4 border-bg-card ${presenceAvatarRingClass(presence)}`}
           >
-            {p.avatarUrl ? (
-              <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center">{p.initials}</span>
-            )}
+            <div
+              className="flex h-[100px] w-[100px] overflow-hidden rounded-full font-serif text-4xl font-semibold text-white"
+              style={p.avatarUrl ? undefined : { backgroundColor: p.color }}
+            >
+              {p.avatarUrl ? (
+                <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center">{p.initials}</span>
+              )}
+            </div>
           </div>
           <div className="min-w-0 flex-1 pt-4">
             <div className="flex flex-wrap items-start justify-between gap-4">

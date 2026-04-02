@@ -715,16 +715,18 @@ export function ChatInterface({
                 >
                   <ChatAvatar url={c.counterpart.avatarUrl} name={c.counterpart.name} className="h-12 w-12" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex justify-between gap-2">
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-0">
                       <div className="min-w-0">
-                        <strong className="truncate text-[15px]">{c.counterpart.name}</strong>
+                        <strong className="block min-w-0 truncate text-[15px]">{c.counterpart.name}</strong>
                         {selfNotes ? (
                           <span className="mt-0.5 block text-[11px] font-medium text-gold/90">
                             Suas notas — só você vê
                           </span>
                         ) : null}
                       </div>
-                      <span className="shrink-0 text-xs text-text-muted">{timeLabel(c.lastMessageAt)}</span>
+                      <span className="shrink-0 pt-0.5 text-xs tabular-nums text-text-muted">
+                        {timeLabel(c.lastMessageAt)}
+                      </span>
                     </div>
                     <p className="truncate text-[13px] text-text-secondary">
                       {c.lastMessage || "Conversa iniciada"}

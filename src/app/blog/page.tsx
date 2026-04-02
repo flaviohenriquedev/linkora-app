@@ -3,7 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
-  title: "Blog & Tendências — LINKORA",
+  title: "Blog & Tendências — Linkora",
 };
 
 const POSTS = [

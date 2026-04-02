@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ScheduleWizard } from "@/components/schedule/ScheduleWizard";
 
 export const metadata: Metadata = {
-  title: "Agendar — LINKORA",
+  title: "Agendar — Linkora",
 };
 
 export default function SchedulePage() {

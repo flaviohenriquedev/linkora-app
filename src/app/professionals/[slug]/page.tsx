@@ -10,9 +10,9 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const professional = await getPublicProfessionalBySlug(slug);
-  if (!professional) return { title: "Profissional — LINKORA" };
+  if (!professional) return { title: "Profissional — Linkora" };
   return {
-    title: `${professional.name} — LINKORA`,
+    title: `${professional.name} — Linkora`,
     description: `${professional.specialty} em ${professional.city}`,
   };
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { KaChat } from "@/components/ka/KaChat";
 
 export const metadata: Metadata = {
-  title: "IA Ka — LINKORA",
+  title: "IA Ka — Linkora",
 };
 
 export default function KaPage() {

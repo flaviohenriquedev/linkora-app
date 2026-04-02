@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { MateriaisPublicClient } from "@/components/materiais/MateriaisPublicClient";
 
 export const metadata: Metadata = {
-  title: "Materiais — LINKORA",
+  title: "Materiais — Linkora",
   description: "Materiais para download.",
 };
 

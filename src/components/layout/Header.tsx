@@ -145,10 +145,10 @@ export function Header() {
                 className="flex min-h-[56px] items-center justify-between gap-3 py-2 sm:min-h-[64px] sm:py-0 md:min-h-[72px] xl:max-w-[1380px] 2xl:max-w-[1480px]">
                 <Link
                     href="/"
-                    className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 font-serif text-lg font-semibold tracking-[0.12em] sm:gap-3 sm:text-xl md:text-2xl md:tracking-[2px]"
+                    className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 font-serif text-lg font-semibold tracking-[0.04em] sm:gap-3 sm:text-xl md:text-2xl md:tracking-[0.06em]"
                 >
                     <LogoLinkora className="h-9 w-9 shrink-0 text-gold sm:h-10 sm:w-10"/>
-                    <span className="leading-none">LINKORA</span>
+                    <span className="leading-none">Linkora</span>
                 </Link>
 
                 <nav className="mx-2 hidden min-w-0 shrink lg:mx-3 lg:block xl:mx-4" aria-label="Principal">

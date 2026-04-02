@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Entrar — LINKORA",
+  title: "Entrar — Linkora",
   description: "Acesse sua conta Linkora.",
 };
 

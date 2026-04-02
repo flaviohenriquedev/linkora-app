@@ -5,7 +5,7 @@ import { ContentCard } from "@/components/content/ContentCard";
 import { tryCreateClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Artigos — LINKORA",
+  title: "Artigos — Linkora",
   description: "Artigos e conteúdos da moda.",
 };
 

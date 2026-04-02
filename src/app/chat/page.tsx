@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 
 export const metadata: Metadata = {
-  title: "Mensagens — LINKORA",
+  title: "Mensagens — Linkora",
 };
 
 export default async function ChatPage({

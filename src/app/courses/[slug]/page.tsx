@@ -13,16 +13,16 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await tryCreateClient();
-  if (!supabase) return { title: "Curso — LINKORA" };
+  if (!supabase) return { title: "Curso — Linkora" };
   const { data } = await supabase
     .from("courses")
     .select("title, description")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
-  if (!data) return { title: "Curso — LINKORA" };
+  if (!data) return { title: "Curso — Linkora" };
   return {
-    title: `${data.title} — LINKORA`,
+    title: `${data.title} — Linkora`,
     description: data.description ?? undefined,
   };
 }

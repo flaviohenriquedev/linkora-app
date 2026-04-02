@@ -5,7 +5,7 @@ import { ContentCard } from "@/components/content/ContentCard";
 import { tryCreateClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Cursos — LINKORA",
+  title: "Cursos — Linkora",
   description: "Cursos e formação na plataforma Linkora.",
 };
 

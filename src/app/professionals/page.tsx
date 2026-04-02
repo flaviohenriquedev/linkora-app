@@ -4,7 +4,7 @@ import { ProfessionalsExplorer } from "@/components/professionals/ProfessionalsE
 import { getPublicProfessionalsAndCategories } from "@/lib/public-professionals";
 
 export const metadata: Metadata = {
-  title: "Profissionais — LINKORA",
+  title: "Profissionais — Linkora",
   description: "Encontre estilistas, modelistas e fornecedores da moda.",
 };
 

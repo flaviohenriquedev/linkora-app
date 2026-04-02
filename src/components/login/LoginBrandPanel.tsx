@@ -12,7 +12,7 @@ export function LoginBrandPanel() {
           className="mb-8 inline-flex min-h-[44px] w-fit items-center gap-2 font-serif text-lg font-semibold tracking-[0.15em] text-text-primary/90 transition-opacity hover:opacity-90 sm:mb-10 sm:gap-3 sm:text-xl sm:tracking-[0.2em] md:text-2xl"
         >
           <LogoLinkora className="h-9 w-9 shrink-0 text-gold sm:h-10 sm:w-10" />
-          LINKORA
+          Linkora
         </Link>
         <h1 className="max-w-md font-serif text-[1.65rem] font-medium leading-[1.15] tracking-tight text-text-primary sm:text-4xl md:text-5xl lg:text-[3.25rem]">
           O ecossistema para quem{" "}

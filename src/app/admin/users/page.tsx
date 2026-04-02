@@ -3,7 +3,7 @@ import { AdminUsersTable } from "@/components/admin/AdminUsersTable";
 import { Container } from "@/components/ui/Container";
 
 export const metadata = {
-  title: "Usuários — Admin — LINKORA",
+  title: "Usuários — Admin — Linkora",
 };
 
 export default function AdminUsersPage() {

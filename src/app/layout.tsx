@@ -20,9 +20,10 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "LINKORA — Ecossistema para moda",
+  title: "Linkora — Ecossistema para moda",
   description:
     "O ecossistema completo para quem confecciona moda. Profissionais, fornecedores e inspiração — em um só lugar.",
+  applicationName: "Linkora",
 };
 
 export const viewport: Viewport = {

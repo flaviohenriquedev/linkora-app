@@ -7,7 +7,7 @@ import { tryCreateClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Área do proprietário — LINKORA",
+  title: "Área do proprietário — Linkora",
 };
 
 export default async function OwnerHomePage() {

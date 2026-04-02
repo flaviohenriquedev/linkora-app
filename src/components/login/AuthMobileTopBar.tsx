@@ -10,7 +10,7 @@ export function AuthMobileTopBar() {
         className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2.5 font-serif text-[0.95rem] font-semibold tracking-[0.14em] text-text-primary transition-opacity hover:opacity-90"
       >
         <LogoLinkora className="h-8 w-8 shrink-0 text-gold" />
-        <span className="truncate">LINKORA</span>
+        <span className="truncate">Linkora</span>
       </Link>
       <Link
         href="/"

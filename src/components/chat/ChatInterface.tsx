@@ -161,6 +161,7 @@ export function ChatInterface({
   const [myId, setMyId] = useState<string | null>(null);
   const [typingPeerId, setTypingPeerId] = useState<string | null>(null);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  const [selfNotesDeleteThreadId, setSelfNotesDeleteThreadId] = useState<string | null>(null);
   const [threadSearchInput, setThreadSearchInput] = useState("");
   const [debouncedThreadSearch, setDebouncedThreadSearch] = useState("");
   const [filterDate, setFilterDate] = useState<string | null>(null);
@@ -622,14 +623,7 @@ export function ChatInterface({
     setMobilePanel("list");
   }
 
-  async function deleteSelfNotesThread(threadId: string) {
-    if (
-      !confirm(
-        "Apagar todas as notas desta conversa? Esta ação não pode ser desfeita.",
-      )
-    ) {
-      return;
-    }
+  async function performDeleteSelfNotesThread(threadId: string) {
     setDeletingThreadId(threadId);
     setError(null);
     try {
@@ -648,6 +642,7 @@ export function ChatInterface({
         setMobilePanel("list");
       }
       await loadThreads({ silent: true });
+      setSelfNotesDeleteThreadId(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao apagar");
     } finally {
@@ -658,6 +653,15 @@ export function ChatInterface({
   const chatPanelHeightMd = "md:h-[calc(100dvh-8rem)] md:min-h-0";
 
   const panelShell = "flex flex-col overflow-hidden bg-bg-card md:rounded-2xl md:border md:border-border";
+
+  useEffect(() => {
+    if (!selfNotesDeleteThreadId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelfNotesDeleteThreadId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selfNotesDeleteThreadId]);
 
   return (
     <div className="flex min-h-[calc(100dvh-5rem)] flex-col gap-0 px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-0 sm:px-4 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-2 md:flex-row md:items-stretch md:gap-6 md:px-6">
@@ -731,7 +735,7 @@ export function ChatInterface({
                   <button
                     type="button"
                     disabled={deletingThreadId === c.id}
-                    onClick={() => void deleteSelfNotesThread(c.id)}
+                    onClick={() => setSelfNotesDeleteThreadId(c.id)}
                     className="shrink-0 border-l border-border px-3 text-text-muted transition hover:bg-red-500/10 hover:text-red-400 sm:px-4"
                     aria-label="Apagar notas"
                     title="Apagar conversa de notas"
@@ -1002,6 +1006,47 @@ export function ChatInterface({
           </div>
         </div>
       </section>
+
+      {selfNotesDeleteThreadId ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
+          role="presentation"
+          onClick={() => setSelfNotesDeleteThreadId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-notes-title"
+            aria-describedby="delete-notes-desc"
+            className="w-full max-w-md rounded-2xl border border-border bg-bg-card p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-notes-title" className="font-serif text-lg font-medium text-text-primary">
+              Apagar “Notas para mim”?
+            </h3>
+            <p id="delete-notes-desc" className="mt-3 text-[15px] leading-relaxed text-text-secondary">
+              Todas as mensagens desta conversa serão removidas. Esta ação não pode ser desfeita.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border border-border px-4 py-2.5 text-[15px] font-medium text-text-primary transition hover:bg-bg-primary"
+                onClick={() => setSelfNotesDeleteThreadId(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-[15px] font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                disabled={deletingThreadId === selfNotesDeleteThreadId}
+                onClick={() => void performDeleteSelfNotesThread(selfNotesDeleteThreadId)}
+              >
+                {deletingThreadId === selfNotesDeleteThreadId ? "Apagando…" : "Apagar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

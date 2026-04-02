@@ -1,35 +1,45 @@
 import type { CSSProperties } from "react";
 
-const BUBBLES: { className: string; style: CSSProperties }[] = [
+type Bubble = { className: string; style: CSSProperties };
+
+const BUBBLES: Bubble[] = [
   {
     className:
-      "left-[8%] top-[12%] h-[min(42vw,280px)] w-[min(42vw,280px)] bg-gold/25 animate-float",
-    style: { animationDelay: "0s" },
+      "left-[3%] top-[8%] h-[min(42vw,320px)] w-[min(42vw,320px)] bg-gold/25 blur-3xl",
+    style: { animation: "login-bubble-wander 30s ease-in-out infinite", animationDelay: "-3s" },
   },
   {
     className:
-      "right-[12%] top-[20%] h-[min(36vw,220px)] w-[min(36vw,220px)] bg-green-light/20 animate-float-slow",
-    style: { animationDelay: "-4s" },
+      "right-[6%] top-[18%] h-[min(34vw,240px)] w-[min(34vw,240px)] bg-green-light/20 blur-3xl",
+    style: { animation: "login-bubble-wander 24s ease-in-out infinite", animationDelay: "-11s" },
   },
   {
     className:
-      "bottom-[18%] left-[15%] h-[min(48vw,320px)] w-[min(48vw,320px)] bg-gold-light/15 animate-drift",
-    style: { animationDelay: "-2s" },
+      "bottom-[8%] left-[9%] h-[min(45vw,340px)] w-[min(45vw,340px)] bg-gold-light/15 blur-3xl",
+    style: { animation: "login-bubble-wander 27s ease-in-out infinite", animationDelay: "-6s" },
   },
   {
     className:
-      "bottom-[10%] right-[8%] h-[min(30vw,180px)] w-[min(30vw,180px)] bg-green-main/30 animate-drift-reverse",
-    style: { animationDelay: "-7s" },
+      "bottom-[4%] right-[5%] h-[min(28vw,190px)] w-[min(28vw,190px)] bg-green-main/30 blur-2xl",
+    style: { animation: "login-bubble-wander-alt 22s ease-in-out infinite", animationDelay: "-14s" },
   },
   {
     className:
-      "left-[35%] top-[45%] h-[min(24vw,140px)] w-[min(24vw,140px)] bg-white/10 animate-pulse-soft",
-    style: { animationDelay: "-1s" },
+      "left-[36%] top-[42%] h-[min(22vw,160px)] w-[min(22vw,160px)] bg-white/10 blur-2xl",
+    style: { animation: "login-bubble-wander-alt 18s ease-in-out infinite", animationDelay: "-4s" },
   },
   {
     className:
-      "right-[28%] bottom-[35%] h-[min(20vw,120px)] w-[min(20vw,120px)] border border-white/20 bg-gold/10 backdrop-blur-md animate-float",
-    style: { animationDelay: "-4s" },
+      "right-[28%] bottom-[35%] h-[min(20vw,120px)] w-[min(20vw,120px)] border border-white/20 bg-gold/10 backdrop-blur-md blur-xl",
+    style: { animation: "login-bubble-wander 19s ease-in-out infinite", animationDelay: "-9s" },
+  },
+  {
+    className: "left-[56%] top-[9%] h-[min(18vw,130px)] w-[min(18vw,130px)] bg-[#4CAF76]/18 blur-2xl",
+    style: { animation: "login-bubble-wander-alt 20s ease-in-out infinite", animationDelay: "-2s" },
+  },
+  {
+    className: "left-[18%] top-[55%] h-[min(14vw,100px)] w-[min(14vw,100px)] bg-[#C9A84C]/18 blur-2xl",
+    style: { animation: "login-bubble-wander 16s ease-in-out infinite", animationDelay: "-12s" },
   },
 ];
 
@@ -51,11 +61,14 @@ export function FloatingBubbles() {
       {BUBBLES.map((b, i) => (
         <div
           key={i}
-          className={`absolute will-change-transform rounded-full blur-3xl ${b.className}`}
+          className={`absolute will-change-transform rounded-full ${b.className}`}
           style={b.style}
         />
       ))}
-      <div className="absolute left-1/2 top-1/2 h-[min(55vw,380px)] w-[min(55vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/5 to-transparent shadow-[0_0_80px_rgba(201,168,76,0.12)] backdrop-blur-[2px] will-change-transform animate-pulse-soft" />
+      <div
+        className="absolute left-1/2 top-1/2 h-[min(58vw,420px)] w-[min(58vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/5 to-transparent shadow-[0_0_110px_rgba(201,168,76,0.16)] backdrop-blur-[2px] will-change-transform"
+        style={{ animation: "login-bubble-orbit 33s ease-in-out infinite", animationDelay: "-8s" }}
+      />
     </div>
   );
 }

@@ -223,7 +223,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
       full_name: profile.full_name as string | null,
       city: profile.city as string | null,
       headline: profile.headline as string | null,
-      bio: profile.bio as string | null,
+      bio: (profile.bio as string | null) ?? null,
       avatar_file_id: (profile.avatar_file_id as string | null) ?? null,
     },
     raw,

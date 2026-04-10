@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { parsePortfolioCropAspect } from "@/lib/portfolio-crop-aspect";
 import { formatCentsToBrl } from "@/lib/currency";
 import { getSignedUrlForPublicFile, getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
@@ -232,20 +233,28 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   if (!profile) return null;
 
-  const { data: contactsRows } = await supabase
-    .from("provider_contacts")
-    .select("id, type, label, value, sort_order")
-    .eq("provider_id", id)
-    .eq("is_public", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  const { data: servicesRows } = await supabase
-    .from("provider_services")
-    .select("id, user_id, title, description, price_cents, categories(name, slug)")
-    .eq("user_id", id)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+  const [{ data: contactsRows }, { data: servicesRows }, { data: portfolioRows, error: portfolioErr }] =
+    await Promise.all([
+      supabase
+        .from("provider_contacts")
+        .select("id, type, label, value, sort_order")
+        .eq("provider_id", id)
+        .eq("is_public", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("provider_services")
+        .select("id, user_id, title, description, price_cents, categories(name, slug)")
+        .eq("user_id", id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("provider_portfolio_posts")
+        .select("id, caption, created_at, image_file_id, crop_aspect")
+        .eq("provider_id", id)
+        .eq("is_public", true)
+        .order("created_at", { ascending: false }),
+    ]);
 
   const raw = (servicesRows ?? []) as ServiceRow[];
   const base = toPublicProfessional(
@@ -271,8 +280,6 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
     }
   }
 
-  const avatarUrl = await getSignedUrlForPublicProviderAvatar(profile.avatar_file_id as string | null);
-
   const contacts: PublicProviderContact[] = ((contactsRows ?? []) as ProviderContactRow[]).map((c) => ({
     id: c.id,
     type: c.type,
@@ -282,32 +289,27 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
-  const { data: portfolioRows, error: portfolioErr } = await supabase
-    .from("provider_portfolio_posts")
-    .select("id, caption, created_at, image_file_id, crop_aspect")
-    .eq("provider_id", id)
-    .eq("is_public", true)
-    .order("created_at", { ascending: false });
+  type PortfolioRow = {
+    id: string;
+    caption: string | null;
+    created_at: string;
+    image_file_id: string;
+    crop_aspect: string | null;
+  };
+  const portfolioRowList = (portfolioErr ? [] : (portfolioRows ?? [])) as PortfolioRow[];
 
-  const portfolioPosts: PublicPortfolioPost[] = portfolioErr
-    ? []
-    : await Promise.all(
-        (
-          (portfolioRows ?? []) as {
-            id: string;
-            caption: string | null;
-            created_at: string;
-            image_file_id: string;
-            crop_aspect: string | null;
-          }[]
-        ).map(async (row) => ({
-          id: row.id,
-          caption: row.caption,
-          created_at: row.created_at,
-          crop_aspect: parsePortfolioCropAspect(row.crop_aspect),
-          imageUrl: await getSignedUrlForPublicFile(row.image_file_id),
-        })),
-      );
+  const signedForPortfolio = await Promise.all([
+    getSignedUrlForPublicProviderAvatar(profile.avatar_file_id as string | null),
+    ...portfolioRowList.map((row) => getSignedUrlForPublicFile(row.image_file_id)),
+  ]);
+  const avatarUrl = signedForPortfolio[0] ?? null;
+  const portfolioPosts: PublicPortfolioPost[] = portfolioRowList.map((row, i) => ({
+    id: row.id,
+    caption: row.caption,
+    created_at: row.created_at,
+    crop_aspect: parsePortfolioCropAspect(row.crop_aspect),
+    imageUrl: signedForPortfolio[i + 1] ?? null,
+  }));
 
   return {
     ...base,
@@ -320,13 +322,21 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
   };
 }
 
-export async function getPublicProfessionalBySlug(slug: string) {
-  const { professionals } = await getPublicProfessionalsAndCategories();
-  return professionals.find((p) => p.slug === slug) ?? null;
-}
+/**
+ * Uma requisição (metadata + page) deduplica no mesmo slug — evita o antigo padrão que carregava
+ * todos os prestadores só para resolver o slug.
+ */
+export const getPublicProfessionalDetailBySlug = cache(
+  async (slug: string): Promise<PublicProfessionalDetail | null> => {
+    const id = professionalIdFromSlug(slug);
+    if (!id) return null;
+    return getPublicProfessionalById(id);
+  },
+);
 
-export async function getPublicProfessionalDetailBySlug(slug: string): Promise<PublicProfessionalDetail | null> {
-  const id = professionalIdFromSlug(slug);
-  if (!id) return null;
-  return getPublicProfessionalById(id);
+export async function getPublicProfessionalBySlug(slug: string): Promise<PublicProfessional | null> {
+  const detail = await getPublicProfessionalDetailBySlug(slug);
+  if (!detail) return null;
+  const { bio: _b, contacts: _c, services: _s, portfolioPosts: _p, ...rest } = detail;
+  return rest;
 }

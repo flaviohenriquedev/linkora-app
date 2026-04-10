@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { IconWhatsApp } from "@/components/icons/IconWhatsApp";
 import { formatCentsToBrl } from "@/lib/currency";
 import { presenceAvatarRingClass, type PresenceStatus } from "@/lib/presence-avatar";
 import type { PublicProfessionalDetail } from "@/lib/public-professionals-shared";
+import { buildWhatsAppChatUrl, normalizeWhatsappDigits } from "@/lib/whatsapp-links";
 
 const TABS = [
   { id: "about", label: "Sobre" },
@@ -128,29 +130,39 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
             <h3 className="mb-2 text-lg text-text-primary">Contatos</h3>
             {p.contacts.length ? (
               <ul className="space-y-2 text-sm text-text-secondary">
-                {p.contacts.map((c) => (
-                  <li key={c.id} className="rounded-lg border border-border bg-bg-card px-3 py-2">
-                    <span className="text-text-muted">{c.label?.trim() || c.type}: </span>
-                    {c.type === "email" ? (
-                      <a className="text-gold hover:underline" href={`mailto:${c.value}`}>
-                        {c.value}
-                      </a>
-                    ) : c.type === "whatsapp" ? (
-                      <a
-                        className="text-gold hover:underline"
-                        href={`https://wa.me/${c.value.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {c.value}
-                      </a>
-                    ) : (
-                      <a className="text-gold hover:underline" href={`tel:${c.value.replace(/\s+/g, "")}`}>
-                        {c.value}
-                      </a>
-                    )}
-                  </li>
-                ))}
+                {p.contacts.map((c) => {
+                  const waDigits = c.type === "whatsapp" ? normalizeWhatsappDigits(c.value) : null;
+                  const waHref =
+                    waDigits != null ? buildWhatsAppChatUrl(waDigits, p.whatsappOpenMessage) : null;
+                  return (
+                    <li key={c.id} className="rounded-lg border border-border bg-bg-card px-3 py-2">
+                      <span className="text-text-muted">{c.label?.trim() || c.type}: </span>
+                      {c.type === "email" ? (
+                        <a className="text-gold hover:underline" href={`mailto:${c.value}`}>
+                          {c.value}
+                        </a>
+                      ) : c.type === "whatsapp" ? (
+                        waHref ? (
+                          <a
+                            className="inline-flex items-center gap-1.5 text-gold hover:underline"
+                            href={waHref}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <IconWhatsApp className="h-4 w-4 shrink-0" />
+                            {c.value}
+                          </a>
+                        ) : (
+                          <span className="text-text-secondary">{c.value}</span>
+                        )
+                      ) : (
+                        <a className="text-gold hover:underline" href={`tel:${c.value.replace(/\s+/g, "")}`}>
+                          {c.value}
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-sm text-text-muted">Prestador não informou contatos públicos.</p>

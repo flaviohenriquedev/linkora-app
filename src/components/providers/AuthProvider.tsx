@@ -16,6 +16,8 @@ export type ProfileRow = {
   bio: string | null;
   city: string | null;
   avatar_file_id: string | null;
+  /** Texto opcional para link wa.me na vitrine */
+  whatsapp_open_message?: string | null;
   created_at: string;
   updated_at: string;
   /** Conta desativada: sessão é encerrada no cliente */

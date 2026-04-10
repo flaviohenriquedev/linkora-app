@@ -21,6 +21,10 @@ export type PublicProfessional = {
   priceLabel: string | null;
   /** Preenchido no cliente quando o utilizador está autenticado (API de presença) */
   presence?: "online" | "away" | "offline";
+  /** Primeiro contato WhatsApp público (dígitos com DDI), para link wa.me */
+  whatsappPhoneDigits: string | null;
+  /** Mensagem opcional no perfil para pré-preencher o WhatsApp */
+  whatsappOpenMessage: string | null;
 };
 
 export type PublicServiceRow = {

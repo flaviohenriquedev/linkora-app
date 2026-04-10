@@ -12,6 +12,7 @@ import {
 import { AccountDangerZone } from "@/components/profile/AccountDangerZone";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { formatCentsToBrl, maskBrlFromDigits, parseBrlToCents } from "@/lib/currency";
+import { DEFAULT_WHATSAPP_OPEN_MESSAGE } from "@/lib/whatsapp-links";
 
 const TABS = [
   { id: "about", label: "Sobre" },
@@ -63,6 +64,7 @@ export function ProfessionalProfile() {
   const [newDesc, setNewDesc] = useState("");
   const [newPriceMasked, setNewPriceMasked] = useState("");
   const [serviceBusy, setServiceBusy] = useState(false);
+  const [whatsappOpenMessage, setWhatsappOpenMessage] = useState("");
   const [contacts, setContacts] = useState<ProviderContactRow[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contactBusy, setContactBusy] = useState(false);
@@ -90,6 +92,7 @@ export function ProfessionalProfile() {
     setHeadline(profile.headline ?? "");
     setBio(profile.bio ?? "");
     setCity(profile.city ?? "");
+    setWhatsappOpenMessage(profile.whatsapp_open_message ?? "");
   }, [profile]);
 
   useEffect(() => {
@@ -154,6 +157,7 @@ export function ProfessionalProfile() {
         headline: headline || null,
         bio: bio || null,
         city: city || null,
+        whatsapp_open_message: whatsappOpenMessage,
       }),
     });
     if (!res.ok) {
@@ -163,7 +167,7 @@ export function ProfessionalProfile() {
     setSaveState("saved");
     await refresh();
     setTimeout(() => setSaveState("idle"), 2000);
-  }, [fullName, headline, bio, city, refresh]);
+  }, [fullName, headline, bio, city, whatsappOpenMessage, refresh]);
 
   async function addService() {
     if (!newCategoryId) return;
@@ -575,8 +579,27 @@ export function ProfessionalProfile() {
           <div className="rounded-xl border border-border bg-bg-card/50 p-4 sm:p-6">
             <h3 className="mb-3 text-lg font-medium text-text-primary">Contatos</h3>
             <p className="mb-4 text-sm text-text-secondary">
-              Adicione e-mails, telefones e WhatsApp para aparecer na sua página pública.
+              Adicione e-mails, telefones e WhatsApp para aparecer na sua página pública. Para o botão WhatsApp nos
+              cards de profissionais, cadastre um contato do tipo WhatsApp marcado como público (com DDI, ex.: 55…).
             </p>
+            <div className="mb-6 rounded-lg border border-border bg-bg-primary/80 p-4">
+              <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="whatsapp-open-msg">
+                Mensagem inicial no WhatsApp (opcional)
+              </label>
+              <textarea
+                id="whatsapp-open-msg"
+                value={whatsappOpenMessage}
+                onChange={(e) => setWhatsappOpenMessage(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder={DEFAULT_WHATSAPP_OPEN_MESSAGE}
+                className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-secondary outline-none focus:border-gold"
+              />
+              <p className="mt-2 text-xs text-text-muted">
+                Quando alguém abrir o seu WhatsApp pela Linkora, este texto virá pré-preenchido. Se ficar em branco,
+                usamos uma mensagem padrão. Grátis (link oficial wa.me).
+              </p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <FormSelect
                 id="new-contact-type"

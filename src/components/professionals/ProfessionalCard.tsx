@@ -1,7 +1,9 @@
 import Link from "next/link";
 import {Button} from "@/components/ui/Button";
+import {IconWhatsApp} from "@/components/icons/IconWhatsApp";
 import {presenceAvatarRingClass} from "@/lib/presence-avatar";
 import {professionalPath, type PublicProfessional} from "@/lib/public-professionals-shared";
+import {buildWhatsAppChatUrl} from "@/lib/whatsapp-links";
 
 type Props = {
     professional: PublicProfessional;
@@ -18,6 +20,10 @@ function Stars({n}: { n: number }) {
 
 export function ProfessionalCard({professional: p}: Props) {
     const profilePath = professionalPath(p);
+    const whatsappHref =
+        p.whatsappPhoneDigits != null
+            ? buildWhatsAppChatUrl(p.whatsappPhoneDigits, p.whatsappOpenMessage)
+            : null;
     return (
         <article
             className="flex min-w-0 cursor-pointer flex-col rounded-2xl border border-border bg-bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gold">
@@ -56,8 +62,8 @@ export function ProfessionalCard({professional: p}: Props) {
                 <Stars n={p.stars}/>
                 <span>({p.reviews})</span>
             </div>
-            <div className="mt-auto flex min-w-0 gap-2 sm:gap-3">
-                <Link href={profilePath} className="min-w-0 flex-1">
+            <div className="mt-auto flex min-w-0 flex-col gap-2 sm:gap-3">
+                <Link href={profilePath} className="min-w-0 w-full">
                     <Button
                         variant="outline"
                         className="w-full px-3 py-2.5 text-sm sm:px-4 sm:text-[15px]"
@@ -65,11 +71,32 @@ export function ProfessionalCard({professional: p}: Props) {
                         Ver Perfil
                     </Button>
                 </Link>
-                <Link href={`/chat?peer=${p.id}`} className="min-w-0 flex-1">
-                    <Button variant="green" className="w-full px-3 py-2.5 text-sm sm:px-4 sm:text-[15px]">
-                        Chat
-                    </Button>
-                </Link>
+                <div className="flex min-w-0 gap-2 sm:gap-3">
+                    <Link href={`/chat?peer=${p.id}`} className="min-w-0 flex-1">
+                        <Button variant="green" className="w-full px-3 py-2.5 text-sm sm:px-4 sm:text-[15px]">
+                            Chat
+                        </Button>
+                    </Link>
+                    {whatsappHref ? (
+                        <a
+                            href={whatsappHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                            aria-label={`WhatsApp — ${p.name}`}
+                            title="WhatsApp"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-full min-h-[44px] min-w-[44px] border-[#25D366]/50 px-0 text-[#25D366] hover:border-[#25D366] hover:bg-[#25D366]/10"
+                            >
+                                <IconWhatsApp className="h-5 w-5" />
+                            </Button>
+                        </a>
+                    ) : null}
+                </div>
             </div>
         </article>
     );

@@ -31,7 +31,9 @@ export async function GET() {
 
   let { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
+    .select(
+      "id, role, full_name, headline, bio, city, avatar_file_id, whatsapp_open_message, created_at, updated_at, is_active",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -43,7 +45,9 @@ export async function GET() {
     await syncOAuthAvatarIfMissing(supabase, user);
     const { data: again } = await supabase
       .from("profiles")
-      .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
+      .select(
+        "id, role, full_name, headline, bio, city, avatar_file_id, whatsapp_open_message, created_at, updated_at, is_active",
+      )
       .eq("id", user.id)
       .maybeSingle();
     if (again) profile = again;
@@ -124,11 +128,15 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const patch: Record<string, string | null> = {};
+  const patch: Record<string, string | null | undefined> = {};
   if (typeof body.full_name === "string") patch.full_name = body.full_name;
   if (typeof body.headline === "string") patch.headline = body.headline;
   if (typeof body.bio === "string") patch.bio = body.bio;
   if (typeof body.city === "string") patch.city = body.city;
+  if (typeof body.whatsapp_open_message === "string") {
+    const t = body.whatsapp_open_message.trim();
+    patch.whatsapp_open_message = t.length ? t.slice(0, 500) : null;
+  }
   if (body.avatar_file_id === null) patch.avatar_file_id = null;
   if (typeof body.avatar_file_id === "string") patch.avatar_file_id = body.avatar_file_id;
 
@@ -139,7 +147,9 @@ export async function PATCH(request: Request) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .upsert({ id: user.id, ...patch }, { onConflict: "id" })
-    .select("id, role, full_name, headline, bio, city, avatar_file_id, created_at, updated_at, is_active")
+    .select(
+      "id, role, full_name, headline, bio, city, avatar_file_id, whatsapp_open_message, created_at, updated_at, is_active",
+    )
     .maybeSingle();
 
   if (error || !profile) {

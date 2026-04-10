@@ -1,6 +1,7 @@
 import { formatCentsToBrl } from "@/lib/currency";
 import { getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
 import { tryCreateClient } from "@/lib/supabase/server";
+import { normalizeWhatsappDigits } from "@/lib/whatsapp-links";
 import type {
   PublicCategory,
   PublicProviderContact,
@@ -26,6 +27,7 @@ type ProfileRow = {
   headline: string | null;
   bio: string | null;
   avatar_file_id: string | null;
+  whatsapp_open_message: string | null;
 };
 
 type ProviderContactRow = {
@@ -121,6 +123,8 @@ function toPublicProfessional(profile: ProfileRow, services: ServiceRow[]): Publ
     stars: fakeStars(seed),
     reviews: fakeReviews(seed),
     priceLabel: priceLabelFromServices(services),
+    whatsappPhoneDigits: null,
+    whatsappOpenMessage: profile.whatsapp_open_message?.trim() || null,
   };
 }
 
@@ -150,7 +154,7 @@ export async function getPublicProfessionalsAndCategories() {
     supabase.from("categories").select("id, name, slug").eq("is_active", true).order("name", { ascending: true }),
     supabase
       .from("profiles")
-      .select("id, full_name, city, headline, bio, avatar_file_id")
+      .select("id, full_name, city, headline, bio, avatar_file_id, whatsapp_open_message")
       .eq("role", "provider")
       .eq("is_active", true),
     supabase
@@ -174,12 +178,37 @@ export async function getPublicProfessionalsAndCategories() {
   }
 
   const profileRows = (profilesRows ?? []) as ProfileRow[];
+  const providerIds = profileRows.map((p) => p.id);
+  const firstWhatsappByProvider = new Map<string, string>();
+
+  if (providerIds.length > 0) {
+    const { data: waRows } = await supabase
+      .from("provider_contacts")
+      .select("provider_id, value, sort_order, created_at")
+      .in("provider_id", providerIds)
+      .eq("type", "whatsapp")
+      .eq("is_public", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    for (const row of waRows ?? []) {
+      const pid = row.provider_id as string;
+      if (firstWhatsappByProvider.has(pid)) continue;
+      const digits = normalizeWhatsappDigits(String(row.value ?? ""));
+      if (digits) firstWhatsappByProvider.set(pid, digits);
+    }
+  }
+
   const professionals = (
     await Promise.all(
       profileRows.map(async (p) => {
         const base = toPublicProfessional(p, servicesByUser.get(p.id) ?? []);
         const avatarUrl = await getSignedUrlForPublicProviderAvatar(p.avatar_file_id);
-        return { ...base, avatarUrl };
+        return {
+          ...base,
+          avatarUrl,
+          whatsappPhoneDigits: firstWhatsappByProvider.get(p.id) ?? null,
+        };
       }),
     )
   ).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -193,7 +222,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, city, headline, bio, role, avatar_file_id")
+    .select("id, full_name, city, headline, bio, role, avatar_file_id, whatsapp_open_message")
     .eq("id", id)
     .eq("role", "provider")
     .eq("is_active", true)
@@ -225,9 +254,20 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
       headline: profile.headline as string | null,
       bio: (profile.bio as string | null) ?? null,
       avatar_file_id: (profile.avatar_file_id as string | null) ?? null,
+      whatsapp_open_message: (profile.whatsapp_open_message as string | null) ?? null,
     },
     raw,
   );
+
+  let detailWhatsappDigits: string | null = null;
+  for (const c of (contactsRows ?? []) as ProviderContactRow[]) {
+    if (c.type !== "whatsapp") continue;
+    const digits = normalizeWhatsappDigits(c.value);
+    if (digits) {
+      detailWhatsappDigits = digits;
+      break;
+    }
+  }
 
   const avatarUrl = await getSignedUrlForPublicProviderAvatar(profile.avatar_file_id as string | null);
 
@@ -240,7 +280,14 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
-  return { ...base, avatarUrl, bio: (profile.bio as string | null) ?? null, contacts, services };
+  return {
+    ...base,
+    avatarUrl,
+    bio: (profile.bio as string | null) ?? null,
+    contacts,
+    services,
+    whatsappPhoneDigits: detailWhatsappDigits,
+  };
 }
 
 export async function getPublicProfessionalBySlug(slug: string) {

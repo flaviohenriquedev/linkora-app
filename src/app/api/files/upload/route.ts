@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_IMAGES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+/** Portfólio: recortes em alta resolução podem gerar JPEG grande; limite um pouco maior após compressão no cliente. */
+const MAX_PORTFOLIO_IMAGE_BYTES = 8 * 1024 * 1024;
 
 const ALLOWED_DOCS = new Set([
   "application/pdf",
@@ -17,7 +19,7 @@ const ALLOWED_DOCS = new Set([
 ]);
 const MAX_DOC_BYTES = 25 * 1024 * 1024;
 
-const purposes = new Set(["profile_avatar", "product_image", "document", "other"]);
+const purposes = new Set(["profile_avatar", "product_image", "provider_portfolio", "document", "other"]);
 
 function extForMime(mime: string): string {
   const m: Record<string, string> = {
@@ -66,7 +68,15 @@ export async function POST(request: Request) {
   const mime = file.type || "application/octet-stream";
   const isImage = ALLOWED_IMAGES.has(mime);
   let maxBytes = MAX_IMAGE_BYTES;
-  let purposeResolved = purpose as "profile_avatar" | "product_image" | "document" | "other";
+  let purposeResolved = purpose as "profile_avatar" | "product_image" | "provider_portfolio" | "document" | "other";
+
+  if (purposeResolved === "provider_portfolio") {
+    const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (prof?.role !== "provider") {
+      return NextResponse.json({ error: "Apenas prestadores podem enviar fotos de portfólio" }, { status: 403 });
+    }
+    maxBytes = MAX_PORTFOLIO_IMAGE_BYTES;
+  }
 
   if (!isImage) {
     const { isAdmin } = await isCurrentUserAdmin();
@@ -87,8 +97,9 @@ export async function POST(request: Request) {
   }
 
   if (file.size > maxBytes) {
+    const mb = maxBytes / (1024 * 1024);
     return NextResponse.json(
-      { error: `Arquivo muito grande (máx. ${maxBytes / (1024 * 1024)} MB)` },
+      { error: `Arquivo muito grande (máximo ${mb} MB).` },
       { status: 400 },
     );
   }

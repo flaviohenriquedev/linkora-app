@@ -1,10 +1,12 @@
+import { parsePortfolioCropAspect } from "@/lib/portfolio-crop-aspect";
 import { formatCentsToBrl } from "@/lib/currency";
-import { getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
+import { getSignedUrlForPublicFile, getSignedUrlForPublicProviderAvatar } from "@/lib/public-files";
 import { tryCreateClient } from "@/lib/supabase/server";
 import { normalizeWhatsappDigits } from "@/lib/whatsapp-links";
 import type {
   PublicCategory,
   PublicProviderContact,
+  PublicPortfolioPost,
   PublicProfessional,
   PublicProfessionalDetail,
   PublicServiceRow,
@@ -280,6 +282,33 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
 
   const services: PublicServiceRow[] = raw.map(mapToPublicServiceRow);
 
+  const { data: portfolioRows, error: portfolioErr } = await supabase
+    .from("provider_portfolio_posts")
+    .select("id, caption, created_at, image_file_id, crop_aspect")
+    .eq("provider_id", id)
+    .eq("is_public", true)
+    .order("created_at", { ascending: false });
+
+  const portfolioPosts: PublicPortfolioPost[] = portfolioErr
+    ? []
+    : await Promise.all(
+        (
+          (portfolioRows ?? []) as {
+            id: string;
+            caption: string | null;
+            created_at: string;
+            image_file_id: string;
+            crop_aspect: string | null;
+          }[]
+        ).map(async (row) => ({
+          id: row.id,
+          caption: row.caption,
+          created_at: row.created_at,
+          crop_aspect: parsePortfolioCropAspect(row.crop_aspect),
+          imageUrl: await getSignedUrlForPublicFile(row.image_file_id),
+        })),
+      );
+
   return {
     ...base,
     avatarUrl,
@@ -287,6 +316,7 @@ export async function getPublicProfessionalById(id: string): Promise<PublicProfe
     contacts,
     services,
     whatsappPhoneDigits: detailWhatsappDigits,
+    portfolioPosts,
   };
 }
 

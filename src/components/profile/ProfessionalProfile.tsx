@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Cropper, { type Area } from "react-easy-crop";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -12,6 +11,8 @@ import {
 import { AccountDangerZone } from "@/components/profile/AccountDangerZone";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { formatCentsToBrl, maskBrlFromDigits, parseBrlToCents } from "@/lib/currency";
+import { ImageCropModal } from "@/components/profile/ImageCropModal";
+import { ProviderPortfolioTab } from "@/components/profile/ProviderPortfolioTab";
 import { DEFAULT_WHATSAPP_OPEN_MESSAGE } from "@/lib/whatsapp-links";
 
 const TABS = [
@@ -81,9 +82,7 @@ export function ProfessionalProfile() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [uploadBusy, setUploadBusy] = useState(false);
   const [sourceImage, setSourceImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [confirmDeleteServiceId, setConfirmDeleteServiceId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -195,11 +194,13 @@ export function ProfessionalProfile() {
     }
   }
 
-  async function deleteService(id: string) {
-    if (typeof window !== "undefined" && !window.confirm("Excluir este serviço?")) return;
+  async function performDeleteService() {
+    const id = confirmDeleteServiceId;
+    if (!id) return;
     setServiceBusy(true);
     try {
       await fetch(`/api/profile/services/${id}`, { method: "DELETE" });
+      setConfirmDeleteServiceId(null);
       await loadServices();
       if (editingId === id) setEditingId(null);
     } finally {
@@ -278,49 +279,10 @@ export function ProfessionalProfile() {
     }
   }
 
-  function onCropComplete(_: Area, areaPixels: Area) {
-    setCroppedAreaPixels(areaPixels);
-  }
-
-  async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = imageSrc;
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(area.width);
-    canvas.height = Math.round(area.height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas indisponível");
-
-    ctx.drawImage(
-      image,
-      area.x,
-      area.y,
-      area.width,
-      area.height,
-      0,
-      0,
-      area.width,
-      area.height,
-    );
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.92),
-    );
-    if (!blob) throw new Error("Falha ao gerar imagem recortada");
-    return blob;
-  }
-
   async function onPickAvatar(file: File | undefined) {
     if (!file) return;
     if (sourceImage) URL.revokeObjectURL(sourceImage);
     setSourceImage(URL.createObjectURL(file));
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
   }
 
   async function removeAvatar() {
@@ -341,11 +303,10 @@ export function ProfessionalProfile() {
     }
   }
 
-  async function confirmCropAndUpload() {
-    if (!sourceImage || !croppedAreaPixels) return;
+  async function confirmCropAndUpload(blob: Blob) {
+    if (!sourceImage) return;
     setUploadBusy(true);
     try {
-      const blob = await getCroppedBlob(sourceImage, croppedAreaPixels);
       const fd = new FormData();
       fd.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
       fd.append("purpose", "profile_avatar");
@@ -384,55 +345,27 @@ export function ProfessionalProfile() {
     );
   }
 
+  const pendingServiceDelete = confirmDeleteServiceId
+    ? services.find((s) => s.id === confirmDeleteServiceId)
+    : undefined;
+
   return (
     <Container className="min-w-0 py-8 sm:py-10">
-      {sourceImage ? (
-        <div className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-border bg-bg-card p-4">
-            <h3 className="mb-3 text-base font-medium text-text-primary">Ajustar foto de perfil</h3>
-            <div className="relative h-[340px] w-full overflow-hidden rounded-xl bg-black/70">
-              <Cropper
-                image={sourceImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
-            </div>
-            <div className="mt-4">
-              <label className="mb-1 block text-xs text-text-muted">Zoom</label>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.05}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full accent-gold"
-              />
-            </div>
-            <div className="mt-4 flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (sourceImage) URL.revokeObjectURL(sourceImage);
-                  setSourceImage(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="button" variant="gold" onClick={() => void confirmCropAndUpload()}>
-                Salvar foto
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ImageCropModal
+        imageSrc={sourceImage}
+        title="Ajustar foto de perfil"
+        cropShape="round"
+        showGrid={false}
+        fixedAspect={1}
+        cropFrameClassName="h-[340px]"
+        confirmLabel={uploadBusy ? "Salvando…" : "Salvar foto"}
+        busy={uploadBusy}
+        onClose={() => {
+          if (sourceImage) URL.revokeObjectURL(sourceImage);
+          setSourceImage(null);
+        }}
+        onConfirm={(blob) => void confirmCropAndUpload(blob)}
+      />
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:justify-between">
         <div>
@@ -851,7 +784,7 @@ export function ProfessionalProfile() {
                             type="button"
                             className="min-h-[44px] rounded-lg border border-border px-3 text-sm text-text-muted transition hover:text-red-400"
                             disabled={serviceBusy}
-                            onClick={() => void deleteService(s.id)}
+                            onClick={() => setConfirmDeleteServiceId(s.id)}
                           >
                             Excluir
                           </button>
@@ -866,22 +799,56 @@ export function ProfessionalProfile() {
         </div>
       )}
 
-      {tab === "portfolio" && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-bg-card text-text-muted"
-            >
-              Portfólio {i} (em breve)
-            </div>
-          ))}
-        </div>
-      )}
+      {tab === "portfolio" ? <ProviderPortfolioTab /> : null}
 
       {tab === "reviews" && (
         <p className="text-text-muted">Avaliações aparecerão aqui quando a área estiver conectada.</p>
       )}
+
+      {confirmDeleteServiceId ? (
+        <div
+          className="fixed inset-0 z-[1550] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
+          role="presentation"
+          onClick={() => !serviceBusy && setConfirmDeleteServiceId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-service-title"
+            aria-describedby="delete-service-desc"
+            className="w-full max-w-md rounded-2xl border border-border bg-bg-card p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-service-title" className="font-serif text-lg font-medium text-text-primary">
+              Excluir serviço?
+            </h3>
+            <p id="delete-service-desc" className="mt-3 text-[15px] leading-relaxed text-text-secondary">
+              {pendingServiceDelete
+                ? `O serviço "${pendingServiceDelete.title}" será removido do seu perfil. Esta ação não pode ser desfeita.`
+                : "Este serviço será removido do seu perfil. Esta ação não pode ser desfeita."}
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px]"
+                disabled={serviceBusy}
+                onClick={() => setConfirmDeleteServiceId(null)}
+              >
+                Cancelar
+              </Button>
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-[15px] font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                disabled={serviceBusy}
+                onClick={() => void performDeleteService()}
+              >
+                {serviceBusy ? "Excluindo…" : "Excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <AccountDangerZone />
     </Container>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/AuthProvider";
 
@@ -36,7 +37,14 @@ function timeAgo(iso: string) {
   }
 }
 
-export function NotificationBell() {
+type Props = {
+  /** Quando o menu hambúrguer abre, o painel de notificações fecha (evita sobreposição). */
+  mobileNavOpen?: boolean;
+  /** Chamado ao abrir o painel — use para fechar o menu mobile (hambúrguer). */
+  onPanelOpen?: () => void;
+};
+
+export function NotificationBell({ mobileNavOpen = false, onPanelOpen }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -96,10 +104,34 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
+      if (!window.matchMedia("(min-width: 768px)").matches) return;
       if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (mobileNavOpen) setOpen(false);
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   async function markRead(ids: string[]) {
@@ -123,13 +155,99 @@ export function NotificationBell() {
 
   if (!user) return null;
 
+  const renderPanel = () => (
+    <div
+      className="flex min-h-0 flex-1 flex-col bg-bg-card md:max-h-[min(70vh,420px)] md:rounded-xl md:border md:border-border md:shadow-2xl"
+      role="menu"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 md:py-2.5">
+        <span className="text-sm font-medium text-text-primary">Notificações</span>
+        {unreadCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => void markAllRead()}
+            className="min-h-[40px] shrink-0 rounded-lg px-2 text-left text-xs text-gold hover:bg-white/5 hover:underline sm:min-h-0"
+          >
+            Marcar todas como lidas
+          </button>
+        ) : null}
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] md:max-h-[min(70vh,380px)]">
+        {loading && items.length === 0 ? (
+          <p className="px-3 py-6 text-center text-sm text-text-muted">Carregando…</p>
+        ) : null}
+        {!loading && items.length === 0 ? (
+          <p className="px-3 py-8 text-center text-sm text-text-muted">Sem notificações.</p>
+        ) : null}
+        {items.map((n) => {
+          const href = n.link?.startsWith("/") ? n.link : n.link ? `/${n.link}` : "/chat";
+          const unread = !n.read_at;
+          return (
+            <div key={n.id} className="border-b border-border last:border-b-0">
+              <Link
+                href={href}
+                role="menuitem"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  if (unread) await markRead([n.id]);
+                  router.push(href);
+                }}
+                className={`block min-h-[52px] px-3 py-3.5 text-left transition hover:bg-bg-primary active:bg-bg-primary md:min-h-0 md:py-3 ${
+                  unread ? "bg-gold/[0.06]" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-muted">
+                    {typeLabel(n.type)}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-text-muted">{timeAgo(n.created_at)}</span>
+                </div>
+                <p className="mt-1 break-words text-sm font-medium text-text-primary">{n.title}</p>
+                {n.body ? (
+                  <p className="mt-0.5 line-clamp-3 break-words text-xs text-text-secondary md:line-clamp-2">
+                    {n.body}
+                  </p>
+                ) : null}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const mobileOverlay =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[1020] flex flex-col md:hidden"
+            style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            <button
+              type="button"
+              className="min-h-0 flex-1 bg-black/50 backdrop-blur-[2px]"
+              aria-label="Fechar notificações"
+              onClick={() => setOpen(false)}
+            />
+            <div className="mx-3 mb-3 flex max-h-[min(78dvh,560px)] min-h-0 flex-col overflow-hidden rounded-t-2xl rounded-b-xl border border-border bg-bg-card shadow-2xl">
+              {renderPanel()}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <div className="relative" ref={wrapRef}>
       <button
         type="button"
         onClick={() => {
+          if (!open) {
+            onPanelOpen?.();
+            void fetchNotifications();
+          }
           setOpen((o) => !o);
-          if (!open) void fetchNotifications();
         }}
         className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-white/5 hover:text-gold"
         aria-label="Notificações"
@@ -147,61 +265,12 @@ export function NotificationBell() {
       </button>
 
       {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-[150] w-[min(100vw-2rem,360px)] origin-top-right rounded-xl border border-border bg-bg-card shadow-2xl"
-        >
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <span className="text-sm font-medium text-text-primary">Notificações</span>
-            {unreadCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => void markAllRead()}
-                className="text-xs text-gold hover:underline"
-              >
-                Marcar todas como lidas
-              </button>
-            ) : null}
+        <>
+          {mobileOverlay}
+          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-[150] hidden w-[min(100vw-2rem,360px)] md:block">
+            {renderPanel()}
           </div>
-          <div className="max-h-[min(70vh,420px)] overflow-y-auto">
-            {loading && items.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-text-muted">Carregando…</p>
-            ) : null}
-            {!loading && items.length === 0 ? (
-              <p className="px-3 py-8 text-center text-sm text-text-muted">Sem notificações.</p>
-            ) : null}
-            {items.map((n) => {
-              const href = n.link?.startsWith("/") ? n.link : n.link ? `/${n.link}` : "/chat";
-              const unread = !n.read_at;
-              return (
-                <div key={n.id} className="border-b border-border last:border-b-0">
-                  <Link
-                    href={href}
-                    role="menuitem"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      setOpen(false);
-                      if (unread) await markRead([n.id]);
-                      router.push(href);
-                    }}
-                    className={`block px-3 py-3 text-left transition hover:bg-bg-primary ${
-                      unread ? "bg-gold/[0.06]" : ""
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-muted">
-                        {typeLabel(n.type)}
-                      </span>
-                      <span className="text-[11px] text-text-muted">{timeAgo(n.created_at)}</span>
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-text-primary">{n.title}</p>
-                    {n.body ? <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">{n.body}</p> : null}
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

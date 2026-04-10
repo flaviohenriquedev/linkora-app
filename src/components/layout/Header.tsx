@@ -185,10 +185,12 @@ export function Header() {
                     </ul>
                 </nav>
 
-                <div className="flex shrink-0 items-center gap-2 xl:gap-4">
-                    <NotificationBell/>
+                <div className="flex min-w-0 shrink items-center gap-2 xl:gap-4">
+                    <div className="shrink-0">
+                        <NotificationBell mobileNavOpen={menuOpen} onPanelOpen={closeMenu} />
+                    </div>
                     <div
-                        className="hidden min-h-[44px] w-[10rem] items-center justify-end lg:flex xl:w-[11.5rem] 2xl:w-[12.5rem]">
+                        className="hidden min-h-[44px] min-w-0 max-w-[14rem] items-center justify-end lg:flex xl:max-w-[16rem] 2xl:max-w-[18rem]">
                         {loading ? (
                             <span
                                 className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-white/[0.06]"
@@ -205,11 +207,11 @@ export function Header() {
                                 Login
                             </Link>
                         ) : (
-                            <div className="relative min-w-0 w-full" ref={profileMenuRef}>
+                            <div className="relative min-w-0 w-full max-w-full" ref={profileMenuRef}>
                                 <button
                                     type="button"
                                     onClick={() => setProfileMenuOpen((s) => !s)}
-                                    className="inline-flex min-h-[44px] max-w-full items-center gap-2 whitespace-nowrap text-[15px] text-gold"
+                                    className="flex min-h-[44px] w-full min-w-0 max-w-full items-center gap-2 text-left text-[15px] text-gold"
                                     aria-haspopup="menu"
                                     aria-expanded={profileMenuOpen}
                                 >
@@ -222,11 +224,13 @@ export function Header() {
                                         initial
                                     )}
                                   </span>
-                                    <div className={`flex flex-col`}>
-                                    <span className="truncate">{displayName}</span>
+                                    <div className="flex min-w-0 flex-1 flex-col items-stretch overflow-hidden">
+                                    <span className="truncate" title={displayName}>
+                                      {displayName}
+                                    </span>
                                         {roleBadge ? (
                                             <span
-                                                className="inline-flex mt-1 rounded-full w-fit border border-gold/40 bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">
+                                                className="mt-1 inline-flex w-fit max-w-full shrink-0 truncate rounded-full border border-gold/40 bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">
                                         {roleBadge}</span>
                                         ) : null}
                                     </div>
@@ -306,7 +310,7 @@ export function Header() {
                             </div>
                         )}
                     </div>
-                    <Link href="/professionals" className="hidden lg:inline-flex">
+                    <Link href="/professionals" className="hidden shrink-0 lg:inline-flex">
             <span
                 className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-transparent bg-gold px-6 py-2.5 text-[15px] font-medium text-bg-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-br hover:from-gold-light hover:to-gold">
               Encontrar Profissional →
@@ -449,10 +453,10 @@ export function Header() {
                                         <Link
                                             href={me}
                                             onClick={closeMenu}
-                                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
+                                            className="flex min-w-0 items-center gap-3 rounded-xl px-4 py-3.5 text-base text-gold hover:bg-white/5"
                                         >
                         <span
-                            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
+                            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-light text-[10px] font-bold text-bg-primary">
                           {avatarUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase Storage
                               <img src={avatarUrl} alt="" className="h-full w-full object-cover"/>
@@ -460,7 +464,9 @@ export function Header() {
                               initial
                           )}
                         </span>
-                                            {displayName}
+                                            <span className="min-w-0 flex-1 truncate" title={displayName}>
+                                              {displayName}
+                                            </span>
                                         </Link>
                                         <Link
                                             href="/chat"

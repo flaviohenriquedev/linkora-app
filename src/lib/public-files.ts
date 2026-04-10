@@ -40,7 +40,25 @@ export async function getSignedUrlForPublicFile(
     const crs = imgCrs.data ?? attCrs.data;
     const matRow = mat.data;
 
-    if (!art && !crs && !matRow) return null;
+    let portfolioOk = false;
+    if (!art && !crs && !matRow) {
+      const { data: pp } = await admin
+        .from("provider_portfolio_posts")
+        .select("provider_id")
+        .eq("image_file_id", fileId)
+        .eq("is_public", true)
+        .maybeSingle();
+      if (pp?.provider_id) {
+        const { data: pr } = await admin
+          .from("profiles")
+          .select("is_active, role")
+          .eq("id", pp.provider_id as string)
+          .maybeSingle();
+        portfolioOk = Boolean(pr?.role === "provider" && pr?.is_active === true);
+      }
+    }
+
+    if (!art && !crs && !matRow && !portfolioOk) return null;
 
     const { data: signed, error: signErr } = await admin.storage
       .from(fileRow.bucket as string)

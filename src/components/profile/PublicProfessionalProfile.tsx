@@ -8,6 +8,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { IconWhatsApp } from "@/components/icons/IconWhatsApp";
 import { formatCentsToBrl } from "@/lib/currency";
 import { presenceAvatarRingClass, type PresenceStatus } from "@/lib/presence-avatar";
+import { portfolioCropAspectClass } from "@/lib/portfolio-crop-aspect";
 import type { PublicProfessionalDetail } from "@/lib/public-professionals-shared";
 import { buildWhatsAppChatUrl, normalizeWhatsappDigits } from "@/lib/whatsapp-links";
 
@@ -202,15 +203,42 @@ export function PublicProfessionalProfile({ professional: p }: Props) {
       )}
 
       {tab === "portfolio" && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-bg-card text-text-muted"
-            >
-              Portfólio {i}
-            </div>
-          ))}
+        <div className="pt-1">
+          {p.portfolioPosts.length === 0 ? (
+            <p className="text-text-muted">Este prestador ainda não publicou fotos no portfólio.</p>
+          ) : (
+            <ul className="mx-auto grid max-w-5xl grid-cols-1 gap-5 min-[520px]:grid-cols-2 min-[900px]:grid-cols-3 sm:gap-6">
+              {p.portfolioPosts.map((post) => (
+                <li
+                  key={post.id}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-bg-card shadow-sm ring-1 ring-black/[0.03] transition-[box-shadow,border-color] hover:border-border hover:shadow-md"
+                >
+                  <div
+                    className={`relative w-full overflow-hidden bg-bg-primary ${portfolioCropAspectClass(post.crop_aspect)}`}
+                  >
+                    {post.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- URL assinada
+                      <img
+                        src={post.imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[140px] items-center justify-center text-sm text-text-muted">
+                        Foto
+                      </div>
+                    )}
+                  </div>
+                  {post.caption?.trim() ? (
+                    <p className="border-t border-border/70 px-4 py-3 text-left text-sm leading-relaxed text-text-secondary">
+                      {post.caption}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

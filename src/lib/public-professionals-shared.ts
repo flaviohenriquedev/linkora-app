@@ -1,3 +1,5 @@
+import type { PortfolioCropAspect } from "@/lib/portfolio-crop-aspect";
+
 export type PublicCategory = {
   id: string;
   name: string;
@@ -42,10 +44,20 @@ export type PublicProviderContact = {
   value: string;
 };
 
+export type PublicPortfolioPost = {
+  id: string;
+  imageUrl: string | null;
+  caption: string | null;
+  created_at: string;
+  /** Proporção escolhida no recorte (1:1, 3:4 ou 9:16). */
+  crop_aspect: PortfolioCropAspect;
+};
+
 export type PublicProfessionalDetail = PublicProfessional & {
   bio: string | null;
   contacts: PublicProviderContact[];
   services: PublicServiceRow[];
+  portfolioPosts: PublicPortfolioPost[];
 };
 
 export function professionalPath(p: Pick<PublicProfessional, "slug">) {

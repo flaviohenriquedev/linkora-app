@@ -78,6 +78,25 @@ function IconSelfNotes({ className = "h-4 w-4 shrink-0" }: { className?: string 
     );
 }
 
+function IconAdmin({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+    return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+    );
+}
+
+function IconSignOut({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+    return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M9 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3" />
+            <path d="M16 17l5-5-5-5" />
+            <path d="M21 12H9" />
+        </svg>
+    );
+}
+
 export function Header() {
     const pathname = usePathname();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -279,11 +298,7 @@ export function Header() {
                                                 onClick={() => setProfileMenuOpen(false)}
                                                 className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gold hover:bg-bg-primary"
                                             >
-                                                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none"
-                                                     stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-                                                </svg>
+                                                <IconAdmin />
                                                 Administração
                                             </Link>
                                         ) : null}
@@ -297,12 +312,7 @@ export function Header() {
                                             }}
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary hover:text-gold"
                                         >
-                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                                                 stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                                                <path d="M9 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
-                                                <path d="M16 17l5-5-5-5"/>
-                                                <path d="M21 12H9"/>
-                                            </svg>
+                                            <IconSignOut />
                                             Sair
                                         </button>
                                     </div>
@@ -420,8 +430,8 @@ export function Header() {
                                         {item.label}
                                     </Link>
                                 ))}
-                                <div className="px-1 py-2">
-                                    <HeaderContentNavMobile onNavigate={closeMenu}/>
+                                <div className="py-2">
+                                    <HeaderContentNavMobile onNavigate={closeMenu} />
                                 </div>
                                 {staticNav.slice(2).map((item) => (
                                     <Link
@@ -488,8 +498,9 @@ export function Header() {
                                             <Link
                                                 href="/admin"
                                                 onClick={closeMenu}
-                                                className="rounded-xl px-4 py-3.5 text-base font-medium text-gold hover:bg-white/5"
+                                                className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-gold hover:bg-white/5"
                                             >
+                                                <IconAdmin className="h-4 w-4 shrink-0" />
                                                 Administração
                                             </Link>
                                         ) : null}
@@ -499,8 +510,9 @@ export function Header() {
                                                 closeMenu();
                                                 void signOut();
                                             }}
-                                            className="rounded-xl px-4 py-3.5 text-left text-base text-text-secondary hover:bg-white/5 hover:text-gold"
+                                            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-base text-text-secondary hover:bg-white/5 hover:text-gold"
                                         >
+                                            <IconSignOut className="h-4 w-4 shrink-0" />
                                             Sair
                                         </button>
                                     </>
